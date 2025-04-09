@@ -19,6 +19,7 @@ pub enum ErrCodes {
     TUC10, // No underlying currency
     TTD11, // Invalid trade date
     TVD12, // Invalid value date
+    TDI13, // New details identical to existing
 }
 
 impl ErrorCode for ErrCodes {
@@ -37,6 +38,7 @@ impl ErrorCode for ErrCodes {
             ErrCodes::TUC10 => "TUC10",
             ErrCodes::TTD11 => "TTD11",
             ErrCodes::TVD12 => "TVD12",
+            ErrCodes::TDI13 => "TDI13",
         }
     }
 
@@ -55,6 +57,7 @@ impl ErrorCode for ErrCodes {
             ErrCodes::TUC10 => "Underlying has no associated currency",
             ErrCodes::TTD11 => "Invalid trade date: {0}",
             ErrCodes::TVD12 => "Invalid value date: {0}",
+            ErrCodes::TDI13 => "New trade details are identical to existing",
         }
     }
 
