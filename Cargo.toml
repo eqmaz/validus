@@ -1,0 +1,36 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/app_core",
+    "crates/trade_core",
+    "."
+]
+
+# Shared dependencies (optional)
+[workspace.dependencies]
+env_logger = "0.11.8"      # Added to workspace
+#chrono = "0.4"
+#uuid = { version = "1", features = ["v4"] }
+#serde = { version = "1.0", features = ["derive"] }
+#serde_json = "1.0"
+#thiserror = "1.0"
+#log = "0.4"              # Added to workspace
+
+
+[package]
+name = "validus_trade"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Internal crates:
+app_core = { path = "crates/app_core" }
+#trade_core = { path = "crates/trade_core" }
+
+# Shared external dependencies:
+env_logger.workspace = true
+serde_json = "1.0.140"
+serde = { version = "1.0.219", features = ["derive"] }
+log = "0.4.27"
+#log = "0.4.27"
+#log.workspace = true

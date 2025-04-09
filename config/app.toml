@@ -1,0 +1,16 @@
+# Global configuration
+debug = true
+
+# Feature flags
+[features]
+dev_mode = true
+
+# Logging configuration
+[logging]
+file   = "./logs/app.log"
+level  = "info"
+format = "json"
+
+# Engine configuration
+[engine]
+machine_id = 100

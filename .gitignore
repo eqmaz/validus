@@ -1,1 +1,30 @@
-/target
+# Rust/Cargo etc
+/target/
+**/*.rs.bk
+
+/coverage/
+/test-results/
+
+# IDEs and editors
+.idea/
+.vscode/
+/*.code-workspace
+/*.iml
+*.sublime-workspace
+*.sublime-project
+
+# Backup / temp files
+*~
+*.swp
+*.tmp
+*.bak
+*.old
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+.Zone.Identifier
