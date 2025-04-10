@@ -1,8 +1,12 @@
-# WIP (WORK IN PROGRESS)
+# WIP (LIVE UPDATES COMING)
 
-## Solution is work in progress. It will be complete before our meeting / in the next few hours. Feel free to track additional commits.
+## Work in progress; App already runs -  works with output. 
 
-### The scaffold should give you a reasonable idea of my approach, patterns and direction
+### Will be complete before our meeting / or in the next few hours. Feel free to track commits.
+
+### The scaffold here should give you a good idea of my approach, patterns and direction
+
+### With every new commit, it will still run without issue. Docs will be updated accordingly 
 
 ### Getting started
 See Makefile - ``make help``<br>
