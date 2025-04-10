@@ -25,7 +25,7 @@ edition = "2021"
 [dependencies]
 # Internal crates:
 app_core = { path = "crates/app_core" }
-#trade_core = { path = "crates/trade_core" }
+trade_core = { path = "crates/trade_core" }
 
 # Shared external dependencies:
 env_logger.workspace = true

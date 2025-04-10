@@ -1293,6 +1293,7 @@ dependencies = [
  "log",
  "serde",
  "serde_json",
+ "trade_core",
 ]
 
 [[package]]
