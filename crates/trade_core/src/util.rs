@@ -1,6 +1,7 @@
 use crate::model::{SnapshotId, TradeDetails, TradeId, UserId};
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
+use std::fmt;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 pub fn current_timestamp_ms() -> u64 {
@@ -22,6 +23,26 @@ pub struct TradeDiff {
     pub from_timestamp: DateTime<Utc>,
     pub to_timestamp: DateTime<Utc>,
     pub differences: HashMap<FieldName, DiffValue>,
+}
+
+/// Display implementation for TradeDiff
+impl fmt::Display for TradeDiff {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "TradeDiff Report for Trade ID: {}", self.trade_id)?;
+        writeln!(f, "Snapshot: {} → {}", self.from_version, self.to_version)?;
+        writeln!(f, "Changed by: {} → {}", self.from_user, self.to_user)?;
+        writeln!(f, "Timestamp: {} → {}", self.from_timestamp, self.to_timestamp)?;
+
+        if self.differences.is_empty() {
+            writeln!(f, "No detail changes detected.")
+        } else {
+            writeln!(f, "Changed fields:")?;
+            for (field, (from_val, to_val)) in &self.differences {
+                writeln!(f, "  {}: {} → {}", field, from_val, to_val)?;
+            }
+            Ok(())
+        }
+    }
 }
 
 pub fn diff_details(from: &TradeDetails, to: &TradeDetails) -> DiffMap {

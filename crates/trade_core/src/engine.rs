@@ -325,8 +325,13 @@ impl<'a> TradeEngine {
     }
 
     /// Fetch a simple list of trade IDs
-    pub fn trade_ids(&self) -> Result<Vec<TradeId>, AppError> {
+    pub fn trade_ids(&self, should_sort: bool) -> Result<Vec<TradeId>, AppError> {
         let store = self.store_lock()?;
+        if should_sort {
+            let mut keys = store.keys();
+            keys.sort();
+            return Ok(keys);
+        }
         Ok(store.keys())
     }
 
@@ -357,6 +362,10 @@ impl<'a> TradeEngine {
 
     /// Returns a structure of differences between two snapshots of a trade
     ///
+    /// # Arguments
+    /// trade_id - The ID of the trade to compare
+    /// v1 - The version of the first snapshot (0-indexed)
+    /// v2 - The version of the second snapshot (0-indexed)
     pub fn diff(&self, trade_id: TradeId, v1: usize, v2: usize) -> Result<TradeDiff, AppError> {
         let trade = self.fetch_trade(trade_id).map_err(|err| {
             let app_err: AppError = err.into();

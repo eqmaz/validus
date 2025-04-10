@@ -10,14 +10,12 @@
 //! - Doing trade operations across the trade engine
 //! - Enforcing higher-level business rules and process flows
 //!
-
 #[allow(dead_code)]
 use app_core::AppError;
-use chrono::{DateTime, Utc};
-use prettytable::{row, Table};
 use rust_decimal::prelude::*;
 use trade_core::model::{Currency, Direction, TradeDetails};
 
+use crate::service::trading_utils::history_to_table;
 use crate::state::trading_state::engine;
 
 const USER_TRADER_1: &str = "userTrader1";
@@ -210,9 +208,10 @@ pub(crate) fn trade_history_view() -> Result<(), AppError> {
     let engine = engine();
 
     // Get a list of all trade IDs
-    let trade_ids = engine.trade_ids()?;
+    // sorts by Snowflake ID which is time-based & monotonic
+    let trade_ids = engine.trade_ids(true)?;
     if trade_ids.len() < 3 {
-        sout!("Less than 3 trades available.");
+        sout!("Less than 3 trades available - run scenario 1, 2, and 3 first plz.");
         return Ok(());
     }
 
@@ -221,37 +220,39 @@ pub(crate) fn trade_history_view() -> Result<(), AppError> {
 
     sout!("\t -> Trade history table for id: {:?}", trade_id);
 
-    let mut table = Table::new();
-    table.add_row(row![
-        //"Trade ID",
-        "Snapshot",
-        "User",
-        "Timestamp",
-        "From",
-        "To",
-        "Amount",
-        "Ccy",
-        "Entity",
-        "Counterpty"
-    ]);
+    let table = history_to_table(history)?; // uses the `prettytable` crate
+    table.printstd();
 
-    for event in history {
-        let ts: DateTime<Utc> = DateTime::<Utc>::from(event.timestamp);
-        table.add_row(row![
-            //trade_id.to_string(),
-            event.snapshot_id,
-            event.user_id,
-            ts.format("%Y-%m-%d %H:%M:%S"),
-            format!("{:?}", event.from_state),
-            format!("{:?}", event.to_state),
-            event.details.notional_amount,
-            format!("{:?}", event.details.notional_currency),
-            event.details.trading_entity,
-            event.details.counterparty,
-        ]);
+    Ok(())
+}
+
+pub(crate) fn trade_hist_diff() -> Result<(), AppError> {
+    iout!("Differences :: Show changes between versions");
+
+    let engine = engine();
+
+    // Get a list of all trade IDs
+    let trade_ids = engine.trade_ids(true)?;
+    if trade_ids.len() < 3 {
+        sout!("Less than 3 trades available - run scenario 1, 2, and 3 first plz.");
+        return Ok(());
     }
 
-    table.printstd();
+    // We'll use the third one for this example as it has amount that changes
+    let trade_id = trade_ids[2]; // third trade ID (index 2)
+    let history = engine.trade_history(trade_id)?;
+
+    // Check that the history has at least 3 entries
+    if history.len() < 3 {
+        sout!("Not enough history entries to compare.");
+        return Ok(());
+    }
+    sout!("\t -> This trade has {:?} history items (snapshots)", history.len());
+    let diff = engine.diff(trade_id, 0, 2)?;
+
+    // Display is implemented in the `Diff` struct
+    sout!("\t -> Diff between snapshots 0 and 2:");
+    sout!("\n{}", diff);
 
     Ok(())
 }

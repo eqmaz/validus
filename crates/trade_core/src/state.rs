@@ -226,36 +226,30 @@ mod tests {
     fn test_next_state_cancel_executed() {
         // Cannot cancel an already executed trade — it's final
         let result = sm().next_state(Cancel, Executed);
-        assert_eq!(
-            result.unwrap_err(),
-            ValidationError::AlreadyFinal(Executed)
-        );
+        assert_eq!(result.unwrap_err(), ValidationError::AlreadyFinal(Executed));
     }
 
     #[test]
     fn test_next_state_unknown_transition() {
         // Trying to send a draft trade to execution is invalid
         let result = sm().next_state(SendToExecute, Draft);
-        assert_eq!(
-            result.unwrap_err(),
-            ValidationError::InvalidTransition(Draft, Draft)
-        );
+        assert_eq!(result.unwrap_err(), ValidationError::InvalidTransition(Draft, Draft));
     }
 
     #[test]
     fn test_cancel_cancel_not_allowed() {
         // Cannot cancel a cancelled trade
         let result = sm().next_state(Cancel, Cancelled);
-        assert_eq!(
-            result.unwrap_err(),
-            ValidationError::AlreadyFinal(Cancelled)
-        );
+        assert_eq!(result.unwrap_err(), ValidationError::AlreadyFinal(Cancelled));
     }
 
     #[test]
     fn test_submit_not_allowed_from_needs_reapproval() {
         // Cannot submit from NeedsReapproval state
         let result = sm().next_state(Submit, NeedsReapproval);
-        assert!(matches!(result, Err(ValidationError::InvalidTransition(NeedsReapproval, _))));
+        assert!(matches!(
+            result,
+            Err(ValidationError::InvalidTransition(NeedsReapproval, _))
+        ));
     }
 }

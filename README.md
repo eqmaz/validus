@@ -38,7 +38,7 @@ Just run ``make run``
 [2025-04-10 17:16:05.012] ✔      -> Trade status after sending to counterparty: SentToCounterparty
 [2025-04-10 17:16:05.012] ✔      -> Trade status after execution: Executed
 ```
-### with the history table output:
+### history table output:
 ```text
 [2025-04-10 18:43:07.822] ℹ Viewing History :: A table of all actions with details
 [2025-04-10 18:43:07.822] ✔      -> Trade history table for id: 185836976245612546
@@ -51,6 +51,21 @@ Just run ``make run``
 +----------+-------------+---------------------+-----------------+-----------------+--------+-----+--------+------------+
 | 2        | userTrader1 | 2025-04-10 17:43:07 | NeedsReapproval | Approved        | 368.02 | GBP | foo    | bar        |
 +----------+-------------+---------------------+-----------------+-----------------+--------+-----+--------+------------+
+```
+
+### Difference API output
+```text
+[2025-04-10 21:59:10.501] ℹ Differences :: Show changes between versions
+[2025-04-10 21:59:10.501] ✔      -> This trade has 3 history items (snapshots)
+[2025-04-10 21:59:10.501] ✔      -> Diff between snapshots 0 and 2:
+[2025-04-10 21:59:10.501] ✔ 
+TradeDiff Report for Trade ID: 185886312488804353
+Snapshot: 0 → 2
+Changed by: userTrader1 → userTrader1
+Timestamp: 2025-04-10 20:59:10.498492024 UTC → 2025-04-10 20:59:10.498676039 UTC
+Changed fields:
+  notional_amount: 468.22 → 368.02
+
 ```
 
 ### Public API coming...
@@ -81,18 +96,21 @@ Just run ``make run``
 
 ## Coming shortly:
  - Better thread-safe performance in the engine (locking at more granular level etc)
- - Functions to demo the example scenarios (scenario1, scenario2 etc)
- - Service layer to interface between trade_core and any public API
  - API layer to support REST or gRPC requests
- - Tests
+ - Few more tests
 
-## What's here now:
-- Trade engine library guts, models, state machine, validations, general flow of logic
-- A Snowflake based ID generator
-- "Interface" based storage pattern for trades (TradeStore) - in memory for now, can be swapped for a DB etc
-- Application micro framework (app_core) with config loading, logging, console, errors etc
-- Application bootstrap with DDD pattern, global errors, configs etc
-- Some docs, to be completed
+## Application includes:
+- Functions to demo the example scenarios (scenario1, scenario2 etc)
+- Trade engine library with models, state machine, validations, public method based API
+  - create, submit, approve, reapprove, send-to-execute, book, history, diff etc
+- A Snowflake based ID generator for trade IDs
+- Abstracted TradeStore with in-memory implementation, interchangeable to DB etc 
+- Service layer to interface between trade_core and any public API (REST, FIX, etc)
+- Micro App framework (app_core) with config loading, logging, console, errors etc
+- Clean main file just bootstraps dependencies and runs the app entry point
+- Makefile for easy commands
+- A few unit tests, more coming
+- Docs
 
 
 ## Cheers, speak soon!
