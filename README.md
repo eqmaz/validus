@@ -31,7 +31,7 @@ Just run ``make run``
 [2025-04-10 17:16:05.011] ✔      -> Trade status after update: NeedsReapproval
 [2025-04-10 17:16:05.011] ✔      -> Trade status after re-approval: Approved
 
-[2025-04-10 17:16:05.011] ℹ Scenario 1 :: Approved trade sent to counterparty & marked as executed.
+[2025-04-10 17:16:05.011] ℹ Scenario 3 :: Approved trade sent to counterparty & marked as executed.
 [2025-04-10 17:16:05.011] ✔      -> Trade created with ID: 185815070192738307 and status Draft
 [2025-04-10 17:16:05.011] ✔      -> Trade status after submission: PendingApproval
 [2025-04-10 17:16:05.012] ✔      -> Trade status after approval: Approved

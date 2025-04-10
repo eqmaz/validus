@@ -136,7 +136,7 @@ pub(crate) fn trade_scenario_2() -> Result<(), AppError> {
 }
 
 pub(crate) fn trade_scenario_3() -> Result<(), AppError> {
-    iout!("Scenario 1 :: Approved trade sent to counterparty & marked as executed.");
+    iout!("Scenario 3 :: Approved trade sent to counterparty & marked as executed.");
 
     let engine = engine();
 
