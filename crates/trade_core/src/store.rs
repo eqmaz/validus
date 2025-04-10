@@ -21,6 +21,7 @@ pub trait TradeStore: Send + Sync {
     fn get(&self, trade_id: TradeId) -> Option<Trade>;
     fn has(&self, trade_id: TradeId) -> bool;
     fn update(&mut self, trade: Trade) -> Result<(), String>;
+    fn keys(&self) -> Vec<TradeId>;
 }
 
 impl TradeStore for InMemoryStore {
@@ -59,5 +60,156 @@ impl TradeStore for InMemoryStore {
             // Trade not found - could handle, or just fail silently?
             None => Err(format!("Trade with ID {:?} not found", trade.id)),
         }
+    }
+
+    /// Get a list of all trade IDs in the store
+    /// They will be in order of insertion
+    fn keys(&self) -> Vec<TradeId> {
+        self.trades.iter().map(|entry| entry.key().clone()).collect()
+    }
+}
+
+// = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+// Unit tests for direction.rs
+// = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::{Currency, Direction, TradeDetails, TradeState}; // adjust path if needed
+    use chrono::NaiveDate;
+    use rust_decimal::prelude::FromPrimitive;
+    use rust_decimal::Decimal;
+    use rust_decimal_macros::dec;
+
+    fn trade_details(quantity: f32) -> TradeDetails {
+        TradeDetails {
+            trading_entity: "BigBank".to_string(),
+            counterparty: "ClientCo".to_string(),
+            direction: Direction::Buy,
+            notional_currency: Currency::USD,
+            notional_amount: Decimal::from_f32(quantity).expect("invalid float"),
+            underlying: vec![Currency::EUR],
+            trade_date: NaiveDate::from_ymd_opt(2025, 4, 10).unwrap(),
+            value_date: NaiveDate::from_ymd_opt(2025, 4, 12).unwrap(),
+            delivery_date: NaiveDate::from_ymd_opt(2025, 4, 15).unwrap(),
+            strike: Some(dec!(1.25)),
+        }
+    }
+
+    fn create_trade(id: TradeId, user_id: &str) -> Trade {
+        Trade::new(id, trade_details(150.0), user_id.to_string())
+    }
+
+    #[test]
+    fn test_push_and_has_trade() {
+        let mut store = InMemoryStore::new();
+        let trade = create_trade(1, "alice");
+
+        assert!(!store.has(trade.id));
+        store.push(trade.clone());
+        assert!(store.has(trade.id));
+    }
+
+    #[test]
+    fn test_get_trade_success() {
+        let mut store = InMemoryStore::new();
+        let trade = create_trade(2, "bob");
+
+        store.push(trade.clone());
+        let fetched = store.get(trade.id);
+        assert!(fetched.is_some());
+        assert_eq!(fetched.unwrap().id, trade.id);
+    }
+
+    #[test]
+    fn test_get_trade_not_found() {
+        let store = InMemoryStore::new();
+        assert!(store.get(42).is_none());
+    }
+
+    #[test]
+    fn test_update_trade_success() {
+        let mut store = InMemoryStore::new();
+        let mut trade = create_trade(3, "charlie");
+
+        store.push(trade.clone());
+
+        trade.add_snapshot("charlie", TradeState::PendingApproval, trade_details(160.0));
+        let result = store.update(trade.clone());
+
+        assert!(result.is_ok());
+
+        let fetched = store.get(trade.id).unwrap();
+        assert_eq!(fetched.latest_details().unwrap().notional_amount, dec!(160.0));
+        assert_eq!(fetched.current_state(), TradeState::PendingApproval);
+    }
+
+    #[test]
+    fn test_update_trade_not_found() {
+        let mut store = InMemoryStore::new();
+        let trade = create_trade(999, "ghost");
+
+        let result = store.update(trade);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Trade with ID 999 not found");
+    }
+
+    #[test]
+    fn test_keys_list() {
+        let mut store = InMemoryStore::new();
+        let trade1 = create_trade(100, "trader1");
+        let trade2 = create_trade(200, "trader2");
+
+        store.push(trade1.clone());
+        store.push(trade2.clone());
+
+        let keys = store.keys();
+        assert_eq!(keys.len(), 2);
+        assert!(keys.contains(&trade1.id));
+        assert!(keys.contains(&trade2.id));
+    }
+
+    #[test]
+    fn test_trade_lifecycle_and_approval() {
+        let mut trade = create_trade(777, "origin");
+
+        assert_eq!(trade.current_state(), TradeState::Draft);
+        assert_eq!(trade.get_requester(), "origin".to_string());
+        assert_eq!(trade.get_first_approver(), None);
+
+        trade.add_snapshot("approver", TradeState::PendingApproval, trade_details(150.0));
+
+        assert_eq!(trade.get_first_approver(), Some("approver".to_string()));
+        assert_eq!(trade.current_state(), TradeState::PendingApproval);
+    }
+
+    #[test]
+    fn test_trade_details_persistence_on_update() {
+        let mut store = InMemoryStore::new();
+        let mut trade = create_trade(42, "alice");
+
+        store.push(trade.clone());
+
+        // Update with new details
+        let updated_details = TradeDetails {
+            trading_entity: "BigBank".to_string(),
+            counterparty: "AnotherCo".to_string(),
+            direction: Direction::Sell,
+            notional_currency: Currency::EUR,
+            notional_amount: dec!(2_000_000),
+            underlying: vec![Currency::USD, Currency::JPY],
+            trade_date: NaiveDate::from_ymd_opt(2025, 5, 1).unwrap(),
+            value_date: NaiveDate::from_ymd_opt(2025, 5, 3).unwrap(),
+            delivery_date: NaiveDate::from_ymd_opt(2025, 5, 10).unwrap(),
+            strike: None,
+        };
+
+        trade.add_snapshot("bob", TradeState::PendingApproval, updated_details.clone());
+        store.update(trade.clone()).unwrap();
+
+        let fetched = store.get(trade.id).unwrap();
+        let current_details = fetched.latest_details().unwrap();
+
+        assert_eq!(current_details, &updated_details);
     }
 }
