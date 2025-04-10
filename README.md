@@ -1,10 +1,8 @@
 # WIP (LIVE UPDATES COMING)
 
-## Work in progress; App already runs -  works with output. 
+## Solution is work in progress; App already runs -  works with output. 
 
-### Will be complete before our meeting / or in the next few hours. Feel free to track commits.
-
-### The scaffold here should give you a good idea of my approach, patterns and direction
+### The scaffold here should give you a good idea of my approach, patterns and direction. Will be complete before our meeting / or in the next few hours. Feel free to track commits.
 
 ### With every new commit, it will still run without issue. Docs will be updated accordingly 
 
