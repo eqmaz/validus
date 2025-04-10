@@ -43,7 +43,7 @@ Just run ``make run``
     │ Validation Rules           │
     | In-memory Store / History  │
     └────────────────────────────┘
-  └────────────────────────────────┘ <<-------->> all sits on top of app_core mini framework        
+  └────────────────────────────────┘ <<-------->> all sits on top of my own app_core mini framework        
 ```
 
 
