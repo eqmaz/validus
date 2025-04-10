@@ -6,24 +6,36 @@ PACKAGE_NAME=validus
 BUILD_DIR=target
 RELEASE_DIR=$(BUILD_DIR)/release
 BINARY=$(RELEASE_DIR)/$(PACKAGE_NAME)
+DOCKER_IMAGE := validus
+DOCKER_CONTAINER := validus
 
 # Help
 .PHONY: help
 help:
 	echo "Usage:"
-	echo "  make check           - Type check the project"
+	echo "  make run             - Compile and run project"
+	echo "  make start           - Run compiled binary"
+	echo "  make all             - Full pipeline: format, check, test, build"
 	echo "  make format          - Format source files"
+	echo "  make check           - Type check the project"
+	echo "  make build           - Build (dev)"
+	echo "  make clean           - Clean all build artifacts"
+	echo "  make release         - Build optimized release binary"
+	echo "  make release-min     - Build with minimal size optimizations"
+	echo "  make update          - Update Cargo dependencies"
+	echo ""
+	echo "Testing:"
 	echo "  make test            - Run all unit tests"
 	echo "  make test-app-core   - Unit tests for app-core framework"
 	echo "  make test-trade-core - Unit tests for trade-core library"
-	echo "  make build           - Build (dev)"
-	echo "  make release         - Build optimized release binary"
-	echo "  make release-min     - Build with minimal size optimizations"
-	echo "  make run             - Run the project"
-	echo "  make start           - Run compiled binary"
-	echo "  make clean           - Clean all build artifacts"
-	echo "  make update          - Update Cargo dependencies"
-	echo "  make all             - Full pipeline: format, check, test, build"
+	echo ""
+	echo "Docker Commands:"
+	echo "  make docker-build    - Build Docker image for the app"
+	echo "  make docker-run      - Run the app container in detached mode"
+	echo "  make docker-shell    - Open an interactive shell in the container"
+	echo "  make docker-stop     - Stop and remove containers"
+	echo "  make docker-clean    - Remove containers, volumes, images"
+	echo "  make docker-rebuild  - Clean and rebuild the Docker image"
 
 # Basic Commands
 .PHONY: check
@@ -76,3 +88,34 @@ update:
 
 .PHONY: all
 all: format check test build run
+
+
+# ==========================
+# Docker Commands
+# ==========================
+
+# Build the Docker image
+docker-build:
+	docker compose build
+
+# Run container in detached mode
+docker-run:
+	docker compose up -d
+
+# Run  container interactively
+docker-shell:
+	docker run --rm -it \
+		-v $$(pwd)/logs:/app/logs \
+		--entrypoint /bin/bash \
+		$(DOCKER_IMAGE)
+
+# Stop and remove containers
+docker-stop:
+	docker compose down
+
+# Stop, remove containers & prune images
+docker-clean:
+	docker compose down --rmi all --volumes --remove-orphans
+
+# Rebuild everything from scratch
+docker-rebuild: docker-clean docker-build

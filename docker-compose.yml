@@ -1,0 +1,7 @@
+services:
+  validus:
+    build: .
+    container_name: validus
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
