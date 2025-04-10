@@ -1,13 +1,13 @@
+mod app_config;
+mod app_entry;
+mod app_errors;
+
+use app_config::AppConfig;
 use app_core::prelude::*;
 use std::path::PathBuf;
 
 #[macro_use]
 extern crate app_core;
-
-mod app_config;
-mod app_errors;
-mod app_entry;
-use app_config::AppConfig;
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // Constants for config and logging
@@ -26,7 +26,7 @@ fn main() {
     ];
 
     // Build AppInitOptions
-    // TODO get logger output from config, use params as fallback
+    // TODO get logger settings from config, use params as fallback
     let opts = AppInitOptions::new()
         .with_config(config_paths, CFG_FILE)
         .with_logger(LOG_STREAM, LOG_LEVEL);
