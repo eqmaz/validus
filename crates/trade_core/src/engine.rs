@@ -1,7 +1,7 @@
 // CURRENTLY UNDER HEAVY DEVELOPMENT
 
 use app_core::config::ConfigManager;
-use app_core::AppError;
+use app_core::{iout, AppError};
 use serde_json::json;
 use std::sync::{Arc, Mutex};
 
@@ -101,6 +101,10 @@ impl<'a> TradeEngine {
         //  There probably is no point duplicating the details here
         trade.add_snapshot(user_id, state_new, details);
 
+        // put the modified trade back into the store
+        // Later we'll come back and refactor to edit trade in place
+        self.store_lock()?.update(trade)?;
+
         Ok(())
     }
 
@@ -128,6 +132,17 @@ impl<'a> TradeEngine {
         }
 
         // -----------------------------------------------------------------------------------------
+        // Business rule:
+        // -----------------------------------------------------------------------------------------
+        // We do not allow the original requester to approve a trade (only re-approve)
+        // In real life we'd hook into a proper authentication / user system
+        if trade.get_requester() == user_id {
+            return Err(AppError::from_code(ErrCodes::TOR14, err_data)
+                .with_tags(&["approve", "requester"])
+            );
+        }
+
+        // -----------------------------------------------------------------------------------------
         // Special business rule:
         // -----------------------------------------------------------------------------------------
         // We only allow the original requester to RE-approve a trade
@@ -150,6 +165,10 @@ impl<'a> TradeEngine {
         // TODO :: NOTE:: details are entirely unchanged in this case
         //  There probably is no point duplicating the details here
         trade.add_snapshot(user_id, state_new, details);
+
+        // put the modified trade back into the store
+        // Later we'll come back and refactor to edit trade in place
+        self.store_lock()?.update(trade)?;
 
         Ok(())
     }
@@ -182,6 +201,10 @@ impl<'a> TradeEngine {
         // TODO :: NOTE:: details are entirely unchanged in this case
         //  There probably is no point duplicating the details here
         trade.add_snapshot(user_id, state_new, details);
+
+        // put the modified trade back into the store
+        // Later we'll come back and refactor to edit trade in place
+        self.store_lock()?.update(trade)?;
 
         Ok(())
     }
@@ -221,6 +244,10 @@ impl<'a> TradeEngine {
         // One or more within details have now definitely changed
         trade.add_snapshot(user_id, state_new, details);
 
+        // put the modified trade back into the store
+        // Later we'll come back and refactor to edit trade in place
+        self.store_lock()?.update(trade)?;
+
         Ok(())
     }
 
@@ -253,6 +280,10 @@ impl<'a> TradeEngine {
         //  There probably is no point duplicating the details here
         trade.add_snapshot(user_id, state_new, details);
 
+        // put the modified trade back into the store
+        // Later we'll come back and refactor to edit trade in place
+        self.store_lock()?.update(trade)?;
+
         Ok(())
     }
 
@@ -279,7 +310,21 @@ impl<'a> TradeEngine {
 
         trade.add_snapshot(user_id, state_new, details);
 
+        // put the modified trade back into the store
+        // Later we'll come back and refactor to edit trade in place
+        self.store_lock()?.update(trade)?;
+
         Ok(())
+    }
+
+    /// Gets the status of the given trade id
+    pub fn trade_get_status(&self, trade_id: TradeId) -> Result<TradeState, AppError> {
+        let trade = self.fetch_trade(trade_id).map_err(|err| {
+            let app_err: AppError = err.into();
+            app_err.with_tags(&["trade_get_status"])
+        })?;
+
+        Ok(trade.current_state())
     }
 
     /// Fetch a vector of TradeEventSnapshot objects
