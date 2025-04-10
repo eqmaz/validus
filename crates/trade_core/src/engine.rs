@@ -1,7 +1,5 @@
-// CURRENTLY UNDER HEAVY DEVELOPMENT
-
 use app_core::config::ConfigManager;
-use app_core::{iout, AppError};
+use app_core::AppError;
 use serde_json::json;
 use std::sync::{Arc, Mutex};
 
@@ -137,9 +135,7 @@ impl<'a> TradeEngine {
         // We do not allow the original requester to approve a trade (only re-approve)
         // In real life we'd hook into a proper authentication / user system
         if trade.get_requester() == user_id {
-            return Err(AppError::from_code(ErrCodes::TOR14, err_data)
-                .with_tags(&["approve", "requester"])
-            );
+            return Err(AppError::from_code(ErrCodes::TOR14, err_data).with_tags(&["approve", "requester"]));
         }
 
         // -----------------------------------------------------------------------------------------

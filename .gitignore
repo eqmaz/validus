@@ -4,6 +4,7 @@
 
 /coverage/
 /test-results/
+/_scratch/
 
 # IDEs and editors
 .idea/

@@ -1,12 +1,27 @@
 # WIP (WORK IN PROGRESS)
 
-## This solution is work in progress. 
+## Solution is work in progress. It will be complete before our meeting / in the next few hours. Feel free to track additional commits.
 
-### At the time of this post I have had less than a day on it.
+### The scaffold should give you a reasonable idea of my approach, patterns and direction
 
-### This will be complete before our next meeting. Feel free to track additional commits.
+### Getting started
+See Makefile - ``make help``<br>
+Just run ``make run``
 
-### Meanwhile this scaffold should give you a reasonable idea of my approach, patterns and direction
+### Example output (hello world)
+```text
+[2025-04-10 12:56:08.960] ✔ Config initialized from config.toml
+[2025-04-10 12:56:08.960] ✔ Logger initialized to ./logs/app.log [debug]
+[2025-04-10 12:56:08.960] ✔ App Started!
+[2025-04-10 12:56:08.961] ℹ Trade one created with ID: 185749655617839104 and status Draft
+[2025-04-10 12:56:08.961] ℹ Trade one history count: 1
+[2025-04-10 12:56:08.961] ℹ Trade status after submission: PendingApproval
+[2025-04-10 12:56:08.961] ℹ Trade one history count: 2
+[2025-04-10 12:56:08.961] ℹ Trade status after approval: Approved
+```
+
+
+### Public API coming...
 
 ## Application layers
 ```text
@@ -31,7 +46,8 @@
 
 
 ## Coming shortly:
- - Complete engine lib
+ - Better thread-safe performance in the engine (locking at more granular level etc)
+ - Functions to demo the example scenarios (scenario1, scenario2 etc)
  - Service layer to interface between trade_core and any public API
  - API layer to support REST or gRPC requests
  - Tests
@@ -45,3 +61,4 @@
 - Some docs, to be completed
 
 
+## Cheers, speak soon!

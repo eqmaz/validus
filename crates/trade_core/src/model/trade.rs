@@ -6,7 +6,6 @@ pub type SnapshotId = usize;
 pub type UserId = String;
 pub type HistoryTable = Vec<(SnapshotId, UserId, TradeState, TradeState, DateTime<Utc>)>;
 
-// TODO do these all need to be public - probably not. getters should be enough
 #[derive(Debug, Clone)]
 pub struct TradeEventSnapshot {
     pub snapshot_id: SnapshotId,
@@ -25,14 +24,10 @@ pub struct Trade {
 }
 
 impl Trade {
-    pub fn current_state(&self) -> TradeState {
-        self.history.last().map(|s| s.to_state).unwrap_or(TradeState::Draft)
-    }
-
-    pub fn latest_details(&self) -> Option<&TradeDetails> {
-        self.history.last().map(|s| &s.details)
-    }
-
+    /// Constructor for Trade - creates a new trade with initial details
+    /// Does not validate the details (assumes already valid)
+    /// Trade is an envelope for the details (detail history)
+    /// The top level contains id, created_at, and history vector
     pub fn new(id: TradeId, initial_details: TradeDetails, user_id: UserId) -> Self {
         let now = Utc::now(); // TODO - discuss, time can be taken from request entry in our network
         let initial_snapshot = TradeEventSnapshot {
@@ -49,6 +44,18 @@ impl Trade {
             created_at: now,
             history: vec![initial_snapshot],
         }
+    }
+
+    /// Returns the current state of the trade
+    /// This will be taken from the very last entry in the history
+    pub fn current_state(&self) -> TradeState {
+        self.history.last().map(|s| s.to_state).unwrap_or(TradeState::Draft)
+    }
+
+    /// Returns the current details of the trade
+    /// This will be taken from the very last entry in the history
+    pub fn latest_details(&self) -> Option<&TradeDetails> {
+        self.history.last().map(|s| &s.details)
     }
 
     /// Add a new versioned snapshot to the trade

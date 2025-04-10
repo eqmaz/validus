@@ -29,12 +29,11 @@ struct State {
 /// Thread-safe unique ID generator based on the Snowflake pattern
 #[derive(Debug, Clone)]
 pub struct SnowflakeIdGenerator {
-    machine_id: u16,               // Unique machine identifier
-    state: Arc<Mutex<State>>,      // Shared mutable state
+    machine_id: u16,          // Unique machine identifier
+    state: Arc<Mutex<State>>, // Shared mutable state
 }
 
 impl SnowflakeIdGenerator {
-
     /// Create new instance with the given machine ID
     ///
     /// # Panics if the machine ID exceeds the allowed bit space.
