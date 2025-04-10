@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 /// Direction of the trade
 /// Future - could support long/short or other types of trades
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-pub(crate) enum Direction {
+pub enum Direction {
     Buy,
     Sell,
 }
@@ -13,7 +13,7 @@ impl Direction {
     /// Accepts "buy" or "sell", "BUY" or "SELL"
     pub fn from_str(s: &str) -> Option<Self> {
         match s.to_lowercase().as_str() {
-            "buy"  => Some(Direction::Buy),
+            "buy" => Some(Direction::Buy),
             "sell" => Some(Direction::Sell),
             _ => None,
         }
@@ -24,14 +24,14 @@ impl Direction {
         match i {
             i if i > 0 => Some(Direction::Buy),
             i if i < 0 => Some(Direction::Sell),
-            _  => None,
+            _ => None,
         }
     }
 
     /// Conversion from Direction to string representation ("buy" or "sell")
     pub fn to_str(&self) -> &str {
         match self {
-            Direction::Buy  => "buy",
+            Direction::Buy => "buy",
             Direction::Sell => "sell",
         }
     }

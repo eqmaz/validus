@@ -11,7 +11,6 @@ use TradeState::*;
 pub struct StateMachine;
 
 impl StateMachine {
-
     /// Checks if a transition is valid, returning a bool
     /// Do not confuse with next_state which actually returns the next state for a given action
     pub fn can_transition(&self, from: TradeState, to: TradeState) -> bool {
@@ -44,7 +43,7 @@ impl StateMachine {
 
     /// Provides the next state for a given action and current state
     /// Responds with an error if the requested action is not valid for the current state
-    pub fn next_state(&self, action: TradeAction, from_state: TradeState, ) -> Result<TradeState, ValidationError> {
+    pub fn next_state(&self, action: TradeAction, from_state: TradeState) -> Result<TradeState, ValidationError> {
         match (action, from_state) {
             // ----------------- Happy paths -------------------------------------------------------
 
@@ -59,7 +58,7 @@ impl StateMachine {
             // Trade gets updated -> needs re-approval
             // We allow updates from Draft, PendingApproval, and POSSIBLY also NeedsReapproval
             // Debatable whether update is allowed from "cancelled"
-            (Update, Draft | PendingApproval | NeedsReapproval ) => Ok(NeedsReapproval),
+            (Update, Draft | PendingApproval | NeedsReapproval) => Ok(NeedsReapproval),
 
             // Approved trade sent to counterparty -> "SentToCounterparty"
             (SendToExecute, Approved) => Ok(SentToCounterparty),

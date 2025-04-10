@@ -17,19 +17,16 @@ pub struct TradeEventSnapshot {
     pub details: TradeDetails,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Trade {
     pub id: TradeId,
-    pub created_at: DateTime<Utc>, // When the trade was first created
+    pub created_at: DateTime<Utc>,        // When the trade was first created
     pub history: Vec<TradeEventSnapshot>, // Current state is the last entry
 }
 
 impl Trade {
     pub fn current_state(&self) -> TradeState {
-        self.history
-            .last()
-            .map(|s| s.to_state)
-            .unwrap_or(TradeState::Draft)
+        self.history.last().map(|s| s.to_state).unwrap_or(TradeState::Draft)
     }
 
     pub fn latest_details(&self) -> Option<&TradeDetails> {
@@ -91,7 +88,10 @@ impl Trade {
     /// Get the original requester of the trade
     /// Do not confuse with get_first_approver (user who FIRST approved the trade)
     pub fn get_requester(&self) -> UserId {
-        self.history.get(0).map(|s| s.user_id.clone())?
+        self.history
+            .get(0)
+            .map(|s| s.user_id.clone())
+            .unwrap_or(String::default())
     }
 
     /// Get user_id of the first approver
@@ -114,15 +114,7 @@ impl Trade {
     pub fn history_table(&self) -> HistoryTable {
         self.history
             .iter()
-            .map(|s| {
-                (
-                    s.snapshot_id,
-                    s.user_id.clone(),
-                    s.from_state,
-                    s.to_state,
-                    s.timestamp,
-                )
-            })
+            .map(|s| (s.snapshot_id, s.user_id.clone(), s.from_state, s.to_state, s.timestamp))
             .collect()
     }
 

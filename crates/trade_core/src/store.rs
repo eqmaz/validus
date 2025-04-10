@@ -1,6 +1,5 @@
 use crate::model::{Trade, TradeId};
 use std::collections::HashMap;
-use app_core::AppError;
 
 /// Just going with a simple HashMap for now, nothing too fancy
 /// This is obviously not sustainable for a production system as we'd run out of memory!
@@ -10,9 +9,7 @@ pub struct InMemoryStore {
 
 impl InMemoryStore {
     pub fn new() -> Self {
-        Self {
-            trades: HashMap::new(),
-        }
+        Self { trades: HashMap::new() }
     }
 }
 
@@ -22,7 +19,7 @@ pub trait TradeStore: Send + Sync {
     fn push(&mut self, trade: Trade) -> TradeId;
     fn get(&self, trade_id: TradeId) -> Option<Trade>;
     fn has(&self, trade_id: TradeId) -> bool;
-    fn update(&self, trade: Trade);
+    fn update(&mut self, trade: Trade) -> Result<(), String>;
 }
 
 impl TradeStore for InMemoryStore {

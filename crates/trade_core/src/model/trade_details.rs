@@ -1,8 +1,8 @@
+use crate::errors::ValidationError;
 use crate::model::{Currency, Direction};
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
-use crate::errors::ValidationError;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TradeDetails {
@@ -20,24 +20,25 @@ pub struct TradeDetails {
 
 impl TradeDetails {
     pub fn validate(&self) -> Result<(), ValidationError> {
-
         // Check that notional amount is present and positive
-        if let Some(amount) = &self.notional_amount {
-            if amount <= &Decimal::ZERO {
-                return Err(ValidationError::NegativeAmount(*amount));
-            }
-        } else {
+        if self.notional_amount < Decimal::ZERO {
+            return Err(ValidationError::NegativeAmount(self.notional_amount));
+        }
+
+        if self.notional_amount == Decimal::ZERO {
             return Err(ValidationError::DetailsInvalid("Notional amount is required".into()));
         }
 
         // Check that underlying currency has at least one entry
         if self.underlying.is_empty() {
-            return Err(ValidationError::EmptyUnderlying("Underlying currency must be present".into()));
+            return Err(ValidationError::EmptyUnderlying(
+                "Underlying currency must be present".into(),
+            ));
         }
 
         // Check that notional currency is present in underlying currency list
         if !self.underlying.contains(&self.notional_currency) {
-            return Err(ValidationError::NoUnderlyingCcy(self.notional_currency));;
+            return Err(ValidationError::NoUnderlyingCcy(self.notional_currency));
         }
 
         // Check that trade date is on or before value date

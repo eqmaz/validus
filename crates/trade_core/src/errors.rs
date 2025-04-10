@@ -1,8 +1,8 @@
+use crate::model::{Currency, TradeId, TradeState};
+use app_core::{AppError, ErrorCode};
 use chrono::NaiveDate;
 use rust_decimal::Decimal;
 use serde_json::json;
-use crate::model::{Currency, TradeId, TradeState};
-use app_core::{app_err, AppError, ErrorCode};
 
 #[derive(Debug)]
 pub enum ErrCodes {
@@ -66,7 +66,6 @@ impl ErrorCode for ErrCodes {
     }
 }
 
-
 #[derive(Debug)]
 pub enum ValidationError {
     TradeNotFound(TradeId),
@@ -94,57 +93,44 @@ impl From<ValidationError> for AppError {
     fn from(err: ValidationError) -> Self {
         match err {
             ValidationError::TradeNotFound(id) => {
-                AppError::from_code(ErrCodes::TNF01, json!({ "trade_id": id }))
-                    .with_tags(&["validation"])
+                AppError::from_code(ErrCodes::TNF01, json!({ "trade_id": id })).with_tags(&["validation"])
             }
             ValidationError::InvalidTransition(from, to) => {
                 let payload = json!({"from": from, "to": to});
-                AppError::from_code(ErrCodes::TST02, payload)
-                    .with_tags(&["validation", "state"])
+                AppError::from_code(ErrCodes::TST02, payload).with_tags(&["validation", "state"])
             }
             ValidationError::DetailsInvalid(msg) => {
-                AppError::from_code(ErrCodes::TDI03, json!({ "reason": msg }))
-                    .with_tags(&["validation", "details"])
+                AppError::from_code(ErrCodes::TDI03, json!({ "reason": msg })).with_tags(&["validation", "details"])
             }
             ValidationError::Unauthorized(reason) => {
-                AppError::from_code(ErrCodes::TUA04, json!({ "reason": reason }))
-                    .with_tags(&["auth"])
+                AppError::from_code(ErrCodes::TUA04, json!({ "reason": reason })).with_tags(&["auth"])
             }
             ValidationError::Internal(msg) => {
-                AppError::from_code(ErrCodes::TIN05, json!({ "msg": msg }))
-                    .with_tags(&["internal"])
+                AppError::from_code(ErrCodes::TIN05, json!({ "msg": msg })).with_tags(&["internal"])
             }
             ValidationError::AlreadyFinal(state) => {
-                AppError::from_code(ErrCodes::TAF06, json!({ "state": state }))
-                    .with_tags(&["state"])
+                AppError::from_code(ErrCodes::TAF06, json!({ "state": state })).with_tags(&["state"])
             }
             ValidationError::NegativeAmount(amount) => {
-                AppError::from_code(ErrCodes::TAM07, json!({ "amount": amount }))
-                    .with_tags(&["validation", "amount"])
+                AppError::from_code(ErrCodes::TAM07, json!({ "amount": amount })).with_tags(&["validation", "amount"])
             }
             ValidationError::InvalidCurrency(ccy) => {
-                AppError::from_code(ErrCodes::TIC08, json!({ "currency": ccy }))
-                    .with_tags(&["validation", "currency"])
+                AppError::from_code(ErrCodes::TIC08, json!({ "currency": ccy })).with_tags(&["validation", "currency"])
             }
             ValidationError::EmptyUnderlying(name) => {
                 AppError::from_code(ErrCodes::TUE09, json!({ "underlying": name }))
                     .with_tags(&["validation", "underlying"])
             }
-            ValidationError::NoUnderlyingCcy(ccy) => {
-                AppError::from_code(ErrCodes::TUC10, json!({ "currency": ccy }))
-                    .with_tags(&["validation", "underlying"])
-            }
+            ValidationError::NoUnderlyingCcy(ccy) => AppError::from_code(ErrCodes::TUC10, json!({ "currency": ccy }))
+                .with_tags(&["validation", "underlying"]),
             ValidationError::InvalidTradeDate(date, reason) => {
                 let payload = json!({"date": date, "reason": reason});
-                AppError::from_code(ErrCodes::TTD11, payload)
-                    .with_tags(&["validation", "dates"])
+                AppError::from_code(ErrCodes::TTD11, payload).with_tags(&["validation", "dates"])
             }
             ValidationError::InvalidValueDate(date, reason) => {
                 let payload = json!({"date": date, "reason": reason});
-                AppError::from_code(ErrCodes::TVD12, payload)
-                    .with_tags(&["validation", "dates"])
+                AppError::from_code(ErrCodes::TVD12, payload).with_tags(&["validation", "dates"])
             }
         }
     }
 }
-

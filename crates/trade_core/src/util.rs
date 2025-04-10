@@ -1,12 +1,10 @@
-use std::collections::HashMap;
-use chrono::{DateTime, Utc};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use crate::model::{SnapshotId, TradeDetails, TradeId, UserId};
+use chrono::{DateTime, Utc};
+use std::collections::HashMap;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 pub fn current_timestamp_ms() -> u64 {
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or(Duration::ZERO);
+    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or(Duration::ZERO);
     now.as_millis() as u64
 }
 
@@ -26,7 +24,6 @@ pub struct TradeDiff {
     pub differences: HashMap<FieldName, DiffValue>,
 }
 
-
 pub fn diff_details(from: &TradeDetails, to: &TradeDetails) -> DiffMap {
     let mut diffs = DiffMap::new();
 
@@ -44,7 +41,6 @@ pub fn diff_details(from: &TradeDetails, to: &TradeDetails) -> DiffMap {
     diff_field!(trading_entity);
     diff_field!(counterparty);
     diff_field!(direction);
-    diff_field!(style);
     diff_field!(notional_currency);
     diff_field!(notional_amount);
     diff_field!(underlying);

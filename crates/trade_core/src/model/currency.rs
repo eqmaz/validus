@@ -45,6 +45,7 @@ pub enum Currency {
 }
 
 impl Currency {
+    #[allow(dead_code)]
     fn name(&self) -> &'static str {
         match self {
             Currency::ARS => "Argentine Peso",
@@ -67,6 +68,7 @@ impl Currency {
         }
     }
 
+    #[allow(dead_code)]
     fn numeric_code(&self) -> u16 {
         match self {
             Currency::ARS => 32,
