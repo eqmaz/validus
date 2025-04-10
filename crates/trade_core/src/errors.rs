@@ -69,7 +69,7 @@ impl ErrorCode for ErrCodes {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum ValidationError {
     TradeNotFound(TradeId),
     InvalidTransition(TradeState, TradeState),

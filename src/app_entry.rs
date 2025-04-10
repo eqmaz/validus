@@ -8,7 +8,6 @@ pub fn run(app: &mut AppContext) -> Result<(), AppError> {
         sout!("Developer mode is ON");
     }
 
-    // Hello world trade
     trade_hello_world()?;
     trade_scenario_1()?;
     trade_scenario_2()?;

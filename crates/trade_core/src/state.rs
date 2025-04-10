@@ -33,8 +33,8 @@ impl StateMachine {
             // After update, original requester can re-approve or cancel it
             (NeedsReapproval, Approved | Cancelled) => true,
 
-            // Approved trade can be sent to counterparty or cancelled
-            (Approved, SentToCounterparty | Cancelled) => true,
+            // Approved trade can be sent to counterparty, cancelled, or re-approved if updated
+            (Approved, SentToCounterparty | Cancelled | NeedsReapproval) => true,
 
             // After sending, trade can be executed or cancelled
             (SentToCounterparty, Executed | Cancelled) => true,
@@ -83,11 +83,179 @@ impl StateMachine {
                 Err(ValidationError::InvalidTransition(from_state, from_state))
             }
 
+            // Can't cancel a cancelled trade
+            (Cancel, Cancelled) => Err(ValidationError::AlreadyFinal(from_state)),
+
             // No action allowed from "final" state
             (_, Executed | Cancelled) => Err(ValidationError::AlreadyFinal(from_state)),
 
             // Catch-all for anything not explicitly supported above
-            _ => Err(ValidationError::InvalidTransition(from_state, Draft)),
+            _ => Err(ValidationError::InvalidTransition(from_state, from_state)),
         }
+    }
+}
+
+// = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+// Unit tests for state machine
+// = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::errors::ValidationError;
+
+    fn sm() -> StateMachine {
+        StateMachine::default()
+    }
+
+    // ---------------------------------------
+    // Basic can_transition() sanity checks
+    // ---------------------------------------
+
+    #[test]
+    fn test_can_transition_valid() {
+        // These transitions are explicitly allowed by the state machine rules
+        assert!(sm().can_transition(Draft, PendingApproval));
+        assert!(sm().can_transition(PendingApproval, Approved));
+        assert!(sm().can_transition(PendingApproval, PendingApproval)); // allowed if updating
+        assert!(sm().can_transition(NeedsReapproval, Approved));
+        assert!(sm().can_transition(Approved, SentToCounterparty));
+        assert!(sm().can_transition(SentToCounterparty, Executed));
+    }
+
+    #[test]
+    fn test_can_transition_invalid() {
+        // These transitions are invalid and should be rejected
+        assert!(!sm().can_transition(Executed, Draft)); // Final to Draft
+        assert!(!sm().can_transition(Cancelled, Approved)); // Final to active
+
+        // Same states
+        assert!(!sm().can_transition(Cancelled, Cancelled)); // Can't cancel a cancelled trade
+        assert!(!sm().can_transition(SentToCounterparty, SentToCounterparty)); // Final to active
+        assert!(!sm().can_transition(Executed, Executed)); // Pending to final
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - -  - - - - - - - - - -
+    // HAPPY PATH — Valid transitions
+    // - - - - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - -  - - - - - - - - - -
+
+    #[test]
+    fn test_next_state_submit_draft() {
+        // Draft → Submit → PendingApproval
+        let result = sm().next_state(Submit, Draft);
+        assert_eq!(result.unwrap(), PendingApproval);
+    }
+
+    #[test]
+    fn test_next_state_approve_pending() {
+        // PendingApproval → Approve → Approved
+        let result = sm().next_state(Approve, PendingApproval);
+        assert_eq!(result.unwrap(), Approved);
+    }
+
+    #[test]
+    fn test_next_state_update_pending() {
+        // PendingApproval → Update → NeedsReapproval
+        let result = sm().next_state(Update, PendingApproval);
+        assert_eq!(result.unwrap(), NeedsReapproval);
+    }
+
+    #[test]
+    fn test_next_state_send_to_execute() {
+        // Approved → SendToExecute → SentToCounterparty
+        let result = sm().next_state(SendToExecute, Approved);
+        assert_eq!(result.unwrap(), SentToCounterparty);
+    }
+
+    #[test]
+    fn test_next_state_book_trade() {
+        // SentToCounterparty → Book → Executed
+        let result = sm().next_state(Book, SentToCounterparty);
+        assert_eq!(result.unwrap(), Executed);
+    }
+
+    #[test]
+    fn test_next_state_cancel_pending() {
+        // PendingApproval → Cancel → Cancelled
+        let result = sm().next_state(Cancel, PendingApproval);
+        assert_eq!(result.unwrap(), Cancelled);
+    }
+
+    #[test]
+    fn test_approve_from_needs_reapproval() {
+        // NeedsReapproval → Approve → Approved
+        let result = sm().next_state(Approve, NeedsReapproval);
+        assert_eq!(result.unwrap(), Approved);
+    }
+
+    #[test]
+    fn test_update_from_draft() {
+        // Draft → Update → NeedsReapproval
+        let result = sm().next_state(Update, Draft);
+        assert_eq!(result.unwrap(), NeedsReapproval);
+    }
+
+    #[test]
+    fn test_cancel_from_needs_reapproval() {
+        // NeedsReapproval → Cancel → Cancelled
+        let result = sm().next_state(Cancel, NeedsReapproval);
+        assert_eq!(result.unwrap(), Cancelled);
+    }
+
+    #[test]
+    fn test_cancel_from_approved() {
+        // Approved → Cancel → Cancelled
+        let result = sm().next_state(Cancel, Approved);
+        assert_eq!(result.unwrap(), Cancelled);
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - -  - - - - - - - - - -
+    // SAD PATH TESTS — Invalid / disallowed transitions
+    // - - - - - - - - - - - - - - - - - - - - - - - -  - - - - - - - - - - - -  - - - - - - - - - -
+
+    #[test]
+    fn test_next_state_invalid_update_executed() {
+        // Cannot update an already executed trade
+        let result = sm().next_state(Update, Executed);
+        assert_eq!(
+            result.unwrap_err(),
+            ValidationError::InvalidTransition(Executed, Executed)
+        );
+    }
+
+    #[test]
+    fn test_next_state_cancel_executed() {
+        // Cannot cancel an already executed trade — it's final
+        let result = sm().next_state(Cancel, Executed);
+        assert_eq!(
+            result.unwrap_err(),
+            ValidationError::AlreadyFinal(Executed)
+        );
+    }
+
+    #[test]
+    fn test_next_state_unknown_transition() {
+        // Trying to send a draft trade to execution is invalid
+        let result = sm().next_state(SendToExecute, Draft);
+        assert_eq!(
+            result.unwrap_err(),
+            ValidationError::InvalidTransition(Draft, Draft)
+        );
+    }
+
+    #[test]
+    fn test_cancel_cancel_not_allowed() {
+        // Cannot cancel a cancelled trade
+        let result = sm().next_state(Cancel, Cancelled);
+        assert_eq!(
+            result.unwrap_err(),
+            ValidationError::AlreadyFinal(Cancelled)
+        );
+    }
+
+    #[test]
+    fn test_submit_not_allowed_from_needs_reapproval() {
+        // Cannot submit from NeedsReapproval state
+        let result = sm().next_state(Submit, NeedsReapproval);
+        assert!(matches!(result, Err(ValidationError::InvalidTransition(NeedsReapproval, _))));
     }
 }
