@@ -18,6 +18,4 @@ pub use crate::console::{eout, iout, out, sout, wout};
 pub use crate::errors::{AppError, ErrorCode, IntoAppError};
 
 /// Common color constants
-pub use crate::colors::{
-    COLOR_BLUE, COLOR_GREEN, COLOR_GREY, COLOR_RED, COLOR_RESET, COLOR_YELLOW,
-};
+pub use crate::colors::{COLOR_BLUE, COLOR_GREEN, COLOR_GREY, COLOR_RED, COLOR_RESET, COLOR_YELLOW};

@@ -20,10 +20,7 @@ pub struct ConfigManager;
 
 impl ConfigManager {
     /// Internal function: load and return (typed, raw)
-    fn load_config<T>(
-        search_paths: &[PathBuf],
-        filename: &str,
-    ) -> Result<(T, RawConfig), config::ConfigError>
+    fn load_config<T>(search_paths: &[PathBuf], filename: &str) -> Result<(T, RawConfig), config::ConfigError>
     where
         T: DeserializeOwned,
     {
@@ -46,13 +43,11 @@ impl ConfigManager {
     where
         T: DeserializeOwned + Send + Sync + 'static,
     {
-        let (typed, raw) = Self::load_config::<T>(search_paths, filename)
-            .unwrap_or_else(|e| panic!("Failed to load config: {}", e));
+        let (typed, raw) =
+            Self::load_config::<T>(search_paths, filename).unwrap_or_else(|e| panic!("Failed to load config: {}", e));
 
         let arc_config: Arc<dyn Any + Send + Sync> = Arc::new(typed);
-        CONFIG
-            .set(arc_config.clone())
-            .expect("Config already initialized");
+        CONFIG.set(arc_config.clone()).expect("Config already initialized");
         RAW.set(raw).expect("Raw config already initialized");
 
         arc_config.downcast::<T>().expect("Type mismatch in config")
@@ -73,10 +68,7 @@ impl ConfigManager {
 
     /// Returns whether a dotted key exists in the raw config (e.g. "logging.level")
     pub fn has_key(key: &str) -> bool {
-        RAW.get()
-            .expect("Config not initialized")
-            .get_string(key)
-            .is_ok()
+        RAW.get().expect("Config not initialized").get_string(key).is_ok()
     }
 
     /// Returns a string value from the config for a given dotted path (e.g. "logging.level")

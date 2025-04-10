@@ -150,10 +150,7 @@ impl Logger {
         log.insert("msg".to_string(), json!(message));
 
         if !field_map.is_empty() {
-            log.insert(
-                "fields".to_string(),
-                serde_json::to_value(field_map).unwrap(),
-            );
+            log.insert("fields".to_string(), serde_json::to_value(field_map).unwrap());
         }
 
         let json_line = serde_json::to_string(&log).unwrap();
@@ -195,14 +192,7 @@ impl Logger {
     }
 
     pub fn critical(msg: &str, fields: Option<&[(&str, Value)]>) {
-        Self::log(
-            LogLevel::Error,
-            "ERROR",
-            msg,
-            fields,
-            Some("critical"),
-            None,
-        );
+        Self::log(LogLevel::Error, "ERROR", msg, fields, Some("critical"), None);
     }
 }
 
@@ -229,22 +219,8 @@ impl LoggerInstance {
     }
 
     /// Internal log call — delegates to the global Logger with its own fields merged in.
-    fn log(
-        &self,
-        level: LogLevel,
-        level_str: &str,
-        msg: &str,
-        fields: Option<&[(&str, Value)]>,
-        kind: Option<&str>,
-    ) {
-        Logger::log(
-            level,
-            level_str,
-            msg,
-            fields,
-            kind,
-            Some(&self.default_fields),
-        );
+    fn log(&self, level: LogLevel, level_str: &str, msg: &str, fields: Option<&[(&str, Value)]>, kind: Option<&str>) {
+        Logger::log(level, level_str, msg, fields, kind, Some(&self.default_fields));
     }
 
     // === Instance logging methods — uses its own default fields -----

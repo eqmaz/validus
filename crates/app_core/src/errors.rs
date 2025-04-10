@@ -72,10 +72,7 @@ pub struct AppError {
 
 impl AppError {
     /// Creates a new `AppError` with a code and message.
-    pub fn new<C: Into<Cow<'static, str>>, M: Into<Cow<'static, str>>>(
-        code: C,
-        message: M,
-    ) -> Self {
+    pub fn new<C: Into<Cow<'static, str>>, M: Into<Cow<'static, str>>>(code: C, message: M) -> Self {
         Self {
             kind: Cow::Borrowed("generic"),
             code: code.into(),
@@ -252,9 +249,7 @@ impl fmt::Display for AppError {
 
 impl Error for AppError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
-        self.previous
-            .as_ref()
-            .map(|e| &**e as &(dyn Error + 'static))
+        self.previous.as_ref().map(|e| &**e as &(dyn Error + 'static))
     }
 }
 
