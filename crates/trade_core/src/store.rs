@@ -1,15 +1,16 @@
 use crate::model::{Trade, TradeId};
-use std::collections::HashMap;
+use dashmap::DashMap;
+//use std::collections::HashMap;
 
 /// Just going with a simple HashMap for now, nothing too fancy
 /// This is obviously not sustainable for a production system as we'd run out of memory!
 pub struct InMemoryStore {
-    trades: HashMap<TradeId, Trade>,
+    trades: DashMap<TradeId, Trade>,
 }
 
 impl InMemoryStore {
     pub fn new() -> Self {
-        Self { trades: HashMap::new() }
+        Self { trades: DashMap::new() }
     }
 }
 
@@ -32,7 +33,8 @@ impl TradeStore for InMemoryStore {
 
     /// Get a trade by ID
     fn get(&self, trade_id: TradeId) -> Option<Trade> {
-        self.trades.get(&trade_id).cloned()
+        // self.trades.get(&trade_id).cloned() // Hashmap version
+        self.trades.get(&trade_id).map(|entry| entry.clone()) // DashMap version
     }
 
     /// Check if the trade exists in the store
@@ -40,14 +42,17 @@ impl TradeStore for InMemoryStore {
         self.trades.contains_key(&trade_id)
     }
 
-    /// We would never really need update entries because
-    /// The trade envelope is immutable. With this design
-    /// we are just appending states to the trade history
-    /// This is only if we want to completely replace the trade container
+    /// Update a trade in the store (replace it with a new one)
+    ///
+    /// We would never really need update entries with better thread safety optimization.
+    /// But right now we are taking a COPY of the trade and then replacing it here.
+    /// The trade envelope is basically immutable.
+    /// With this design we are just appending state to the trade history
     fn update(&mut self, trade: Trade) -> Result<(), String> {
         // Just replace the trade found in the hashmap if found by id, with trade
         match self.trades.get_mut(&trade.id) {
-            Some(trade_found) => {
+            //Some(trade_found) => {
+            Some(mut trade_found) => {
                 *trade_found = trade;
                 Ok(())
             }
