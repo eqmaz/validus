@@ -13,6 +13,7 @@ pub fn run(app: &mut AppContext) -> Result<(), AppError> {
     trade_scenario_1()?;
     trade_scenario_2()?;
     trade_scenario_3()?;
+    trade_history_view()?;
 
     Ok(())
 }

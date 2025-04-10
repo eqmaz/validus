@@ -324,6 +324,12 @@ impl<'a> TradeEngine {
         Ok(trade.current_state())
     }
 
+    /// Fetch a simple list of trade IDs
+    pub fn trade_ids(&self) -> Result<Vec<TradeId>, AppError> {
+        let store = self.store_lock()?;
+        Ok(store.keys())
+    }
+
     /// Fetch a vector of TradeEventSnapshot objects
     /// These include the state transitions and details for each state
     pub fn trade_history(&self, trade_id: TradeId) -> Result<Vec<TradeEventSnapshot>, AppError> {
@@ -335,7 +341,7 @@ impl<'a> TradeEngine {
         Ok(trade.history)
     }
 
-    /// Fetch the latest trade details (it's current state)
+    /// Fetch the latest (current) trade details for the given trade id
     pub fn trade_details(&self, trade_id: TradeId) -> Result<TradeDetails, AppError> {
         let trade = self.fetch_trade(trade_id).map_err(|err| {
             let app_err: AppError = err.into();
@@ -379,5 +385,55 @@ impl<'a> TradeEngine {
             to_timestamp: to.timestamp,
             differences,
         })
+    }
+}
+
+// = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+// Basic unit tests for engine logic
+// = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::{Currency, Direction};
+    use chrono::NaiveDate;
+    use rust_decimal_macros::dec;
+
+    fn sample_trade_details() -> TradeDetails {
+        TradeDetails {
+            trading_entity: "EntityA".into(),
+            counterparty: "CounterpartyB".into(),
+            direction: Direction::Buy,
+            notional_currency: Currency::USD,
+            notional_amount: dec!(1_000_000.00),
+            underlying: vec![Currency::EUR, Currency::GBP],
+            trade_date: NaiveDate::from_ymd_opt(2025, 4, 10).unwrap(),
+            value_date: NaiveDate::from_ymd_opt(2025, 4, 12).unwrap(),
+            delivery_date: NaiveDate::from_ymd_opt(2025, 4, 13).unwrap(),
+            strike: Some(dec!(1.2345)),
+        }
+    }
+
+    fn new_engine() -> TradeEngine {
+        TradeEngine::new(InMemoryStore::new())
+    }
+
+    #[test]
+    fn test_create_trade() {
+        let engine = new_engine();
+        let user_id = "alice";
+        let details = sample_trade_details();
+
+        // Create trade
+        let trade_id_result = engine.create(user_id, details.clone());
+        assert!(trade_id_result.is_ok(), "Trade creation failed: {:?}", trade_id_result);
+
+        let trade_id = trade_id_result.unwrap();
+
+        // Fetch back the trade details
+        let fetched = engine.trade_details(trade_id);
+        assert!(fetched.is_ok(), "Fetching trade failed: {:?}", fetched);
+
+        let fetched_details = fetched.unwrap();
+        assert_eq!(fetched_details, details, "Trade details mismatch");
     }
 }

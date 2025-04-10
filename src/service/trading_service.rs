@@ -1,6 +1,20 @@
-// service layer
+//! # Service Layer: DDD Orchestration
+//!
+//! Domain-level orchestration logic for trade workflows.
+//! It acts as the intermediary between external interfaces (REST/gRPC/FIX/etc.) and the
+//! underlying `trade_core` library.
+//!
+//! Responsibilities include:
+//! - App service boundary within DDD setup
+//! - Validating any incoming requests
+//! - Doing trade operations across the trade engine
+//! - Enforcing higher-level business rules and process flows
+//!
+
 #[allow(dead_code)]
 use app_core::AppError;
+use chrono::{DateTime, Utc};
+use prettytable::{row, Table};
 use rust_decimal::prelude::*;
 use trade_core::model::{Currency, Direction, TradeDetails};
 
@@ -132,6 +146,10 @@ pub(crate) fn trade_scenario_2() -> Result<(), AppError> {
     trade_status = engine.trade_get_status(trade_id)?;
     sout!("\t -> Trade status after re-approval: {:?}", trade_status);
 
+    // Count the trade history
+    let trade_history = engine.trade_history(trade_id).unwrap_or(vec![]).len();
+    sout!("\t -> Trade history count: {:?}", trade_history);
+
     Ok(())
 }
 
@@ -182,6 +200,58 @@ pub(crate) fn trade_scenario_3() -> Result<(), AppError> {
     engine.book(USER_TRADER_1, trade_id)?;
     trade_status = engine.trade_get_status(trade_id)?;
     sout!("\t -> Trade status after execution: {:?}", trade_status);
+
+    Ok(())
+}
+
+pub(crate) fn trade_history_view() -> Result<(), AppError> {
+    iout!("Viewing History :: A table of all actions with details");
+
+    let engine = engine();
+
+    // Get a list of all trade IDs
+    let trade_ids = engine.trade_ids()?;
+    if trade_ids.len() < 3 {
+        sout!("Less than 3 trades available.");
+        return Ok(());
+    }
+
+    let trade_id = trade_ids[2]; // third trade ID (index 2)
+    let history = engine.trade_history(trade_id)?;
+
+    sout!("\t -> Trade history table for id: {:?}", trade_id);
+
+    let mut table = Table::new();
+    table.add_row(row![
+        //"Trade ID",
+        "Snapshot",
+        "User",
+        "Timestamp",
+        "From",
+        "To",
+        "Amount",
+        "Ccy",
+        "Entity",
+        "Counterpty"
+    ]);
+
+    for event in history {
+        let ts: DateTime<Utc> = DateTime::<Utc>::from(event.timestamp);
+        table.add_row(row![
+            //trade_id.to_string(),
+            event.snapshot_id,
+            event.user_id,
+            ts.format("%Y-%m-%d %H:%M:%S"),
+            format!("{:?}", event.from_state),
+            format!("{:?}", event.to_state),
+            event.details.notional_amount,
+            format!("{:?}", event.details.notional_currency),
+            event.details.trading_entity,
+            event.details.counterparty,
+        ]);
+    }
+
+    table.printstd();
 
     Ok(())
 }
