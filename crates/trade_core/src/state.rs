@@ -21,6 +21,9 @@ impl StateMachine {
             // Submitting a draft goes to pending approval
             (Draft, PendingApproval) => true,
 
+            // Updating a draft can go to needs re-approval
+            (Draft, NeedsReapproval) => true,
+
             // UPDATING a pending-approval trade = no stage change
             (PendingApproval, PendingApproval) => true,
 
@@ -66,7 +69,7 @@ impl StateMachine {
             // Trade executed (confirmation) -> book it
             (Book, SentToCounterparty) => Ok(Executed),
 
-            // Cancel allowed from active states,
+            // Cancel allowed from active state,
             // - possibly including SentToCounterparty (on a best-effort basis)
             //   but definitely not including Executed or Cancelled
             (Cancel, Draft | PendingApproval | NeedsReapproval | Approved) => Ok(Cancelled),
@@ -80,7 +83,7 @@ impl StateMachine {
                 Err(ValidationError::InvalidTransition(from_state, from_state))
             }
 
-            // No action allowed from "final" states
+            // No action allowed from "final" state
             (_, Executed | Cancelled) => Err(ValidationError::AlreadyFinal(from_state)),
 
             // Catch-all for anything not explicitly supported above

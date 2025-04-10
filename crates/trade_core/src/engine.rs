@@ -325,13 +325,27 @@ impl<'a> TradeEngine {
 
     /// Fetch a vector of TradeEventSnapshot objects
     /// These include the state transitions and details for each state
-    pub fn history(&self, trade_id: TradeId) -> Result<Vec<TradeEventSnapshot>, AppError> {
+    pub fn trade_history(&self, trade_id: TradeId) -> Result<Vec<TradeEventSnapshot>, AppError> {
         let trade = self.fetch_trade(trade_id).map_err(|err| {
             let app_err: AppError = err.into();
             app_err.with_tags(&["history"])
         })?;
 
         Ok(trade.history)
+    }
+
+    /// Fetch the latest trade details (it's current state)
+    pub fn trade_details(&self, trade_id: TradeId) -> Result<TradeDetails, AppError> {
+        let trade = self.fetch_trade(trade_id).map_err(|err| {
+            let app_err: AppError = err.into();
+            app_err.with_tags(&["trade_details"])
+        })?;
+
+        // Get the latest details
+        trade
+            .latest_details()
+            .cloned()
+            .ok_or_else(|| ValidationError::Internal("Missing trade details".into()).into())
     }
 
     /// Returns a structure of differences between two snapshots of a trade
