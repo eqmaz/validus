@@ -4,6 +4,7 @@ use serde_json::json;
 use std::sync::{Arc, Mutex};
 
 use crate::errors::{ErrCodes, ValidationError};
+use crate::model::TradeState::NeedsReapproval;
 use crate::model::*;
 use crate::snowflake::SnowflakeIdGenerator;
 use crate::state::StateMachine;
@@ -134,7 +135,7 @@ impl<'a> TradeEngine {
         // -----------------------------------------------------------------------------------------
         // We do not allow the original requester to approve a trade (only re-approve)
         // In real life we'd hook into a proper authentication / user system
-        if trade.get_requester() == user_id {
+        if state_now != NeedsReapproval && trade.get_requester() == user_id {
             return Err(AppError::from_code(ErrCodes::TOR14, err_data).with_tags(&["approve", "requester"]));
         }
 

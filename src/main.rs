@@ -1,6 +1,8 @@
 mod app_config;
 mod app_entry;
 mod app_errors;
+mod service;
+mod state;
 
 use app_config::AppConfig;
 use app_core::prelude::*;
@@ -39,5 +41,4 @@ fn main() {
 
     // Start the business logic
     app.start(app_entry::run)
-    //app.start(|app: &mut AppContext| app_entry::run(app))
 }

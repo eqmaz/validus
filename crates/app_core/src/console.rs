@@ -1,5 +1,3 @@
-// crates/app_core/src/console.rs
-
 #![allow(unused_imports)]
 use chrono::Local;
 use std::io::{self, IsTerminal}; // Terminal detection for conditional coloring
