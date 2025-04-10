@@ -1,10 +1,15 @@
 //! Core trading engine components
+
+// Private modules
+mod snowflake;
+mod state;
+mod util;
+
+// Public modules
 pub mod engine;
 pub mod errors;
 pub mod model;
-pub mod snowflake;
-pub mod state;
+pub mod prelude;
 pub mod store;
-pub mod util;
 
 pub use engine::TradeEngine;
