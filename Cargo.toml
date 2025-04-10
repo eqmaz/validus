@@ -30,7 +30,6 @@ trade_core = { path = "crates/trade_core" }
 # Shared external dependencies:
 env_logger.workspace = true
 serde_json = "1.0.140"
+
 serde = { version = "1.0.219", features = ["derive"] }
-log = "0.4.27"
-#log = "0.4.27"
-#log.workspace = true
+rust_decimal = { version = "1", features = ["serde"] }

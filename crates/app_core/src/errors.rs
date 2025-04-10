@@ -26,7 +26,7 @@
 //! ).with_kind("auth");
 //! ```
 
-use crate::logger;
+use crate::{console, logger};
 use serde_json::Value;
 use std::any::Any;
 use std::backtrace::Backtrace;
@@ -222,7 +222,7 @@ impl AppError {
     }
 
     /// Log the error using the global logger instance.
-    pub fn log(&self) {
+    pub fn log(&self) -> &AppError {
         // Add kind to fields
         let mut fields: Vec<(&str, Value)> = vec![("kind", serde_json::json!(self.kind_str()))];
 
@@ -238,6 +238,41 @@ impl AppError {
 
         // Step 4: Send to logger
         logger::Logger::error(&self.message, Some(&fields));
+        self
+    }
+
+    /// Pretty-print the error for terminal/CLI output
+    pub fn display(&self) -> &AppError {
+        let kind = self.kind_str();
+        let code = self.code.as_ref();
+        let message = self.message.as_ref();
+
+        let mut payload = format!("[{}] {}", kind.to_uppercase(), message);
+
+        if !self.tags.is_empty() {
+            payload.push_str(&format!("\nTags:\n  {}", self.tags.join(", ")));
+        }
+
+        if !self.data.is_empty() {
+            payload.push_str("\nInfo:");
+            for (k, v) in &self.data {
+                payload.push_str(&format!("\n  - {}: {}", k, v));
+            }
+        }
+
+        if let Some(prev) = &self.previous {
+            payload.push_str(&format!("\nCaused by: {}", prev));
+        }
+
+        console::eout(code, payload);
+        self
+    }
+
+    /// Log and display the error.
+    /// Returns `self` for chaining.
+    pub fn log_and_display(self) -> Self {
+        self.log().display();
+        self
     }
 }
 

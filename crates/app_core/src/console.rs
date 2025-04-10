@@ -90,9 +90,10 @@ pub fn out<T: std::fmt::Display>(value: T) {
 /// * `value` - The error message
 #[allow(dead_code)]
 pub fn eout<T: std::fmt::Display>(code: &str, value: T) {
-    let msg = format!("[{}] {}", code, value.to_string());
+    let msg = format!("✖ [{}] {}", code, value.to_string());
     let payload = colorize(&msg, COLOR_RED);
-    eprintln!("{} {:?}", current_time(), payload);
+    //eprintln!("{} {:?}", current_time(), payload); // Prints the debug representation (escapes formatting)
+    eprintln!("{} {}", colorize(&current_time(), COLOR_GREY), payload);
 }
 
 /// Contextual Success output with green checkmark

@@ -1,6 +1,8 @@
 use app_core::ErrorCode;
 
+#[allow(dead_code)]
 pub mod err_kind {
+
     pub const AUTH: &str = "auth";
     pub const VALIDATION: &str = "validation";
     pub const SERVICE: &str = "external_service";
@@ -8,10 +10,9 @@ pub mod err_kind {
 
 #[derive(Debug)]
 pub enum ErrCodes {
-    // Trade core errors
-    //ETC001,
-
+    #[allow(dead_code)]
     E1234,
+    #[allow(dead_code)]
     E2000,
 }
 

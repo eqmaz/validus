@@ -1,4 +1,4 @@
-use crate::{config::ConfigManager, console, sout, Logger};
+use crate::{config::ConfigManager, console, sout, AppError, Logger};
 use ctrlc;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -245,11 +245,16 @@ impl AppContext {
     /// Run the application entrypoint (userland provided function)
     pub fn start<F>(mut self, entrypoint: F)
     where
-        F: FnOnce(&mut Self),
+        F: FnOnce(&mut Self) -> Result<(), AppError>,
     {
         self.handle_signals();
 
-        entrypoint(&mut self);
+        //entrypoint(&mut self);
+
+        if let Err(err) = entrypoint(&mut self) {
+            err.log_and_display();
+            // std::process::exit(1);
+        }
         self.shutdown();
     }
 

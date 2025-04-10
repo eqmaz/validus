@@ -1290,7 +1290,7 @@ version = "0.1.0"
 dependencies = [
  "app_core",
  "env_logger",
- "log",
+ "rust_decimal",
  "serde",
  "serde_json",
  "trade_core",

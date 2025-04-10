@@ -60,6 +60,18 @@ macro_rules! iout {
     };
 }
 
+#[macro_export]
+macro_rules! eout {
+    ($($arg:tt)*) => {
+        $crate::console::out(
+            $crate::console::colorize(
+                &format!("✖ {}", format!($($arg)*)),
+                $crate::COLOR_RED
+            )
+        );
+    };
+}
+
 // #[macro_export]
 // macro_rules! warn_and_console {
 //     ($msg:expr) => {{
