@@ -57,7 +57,7 @@ impl<'a> TradeEngine {
     }
 
     /// Creates a DRAFT trade on the system and returns the trade ID.
-    pub fn create(&mut self, user_id: &str, details: TradeDetails) -> Result<TradeId, AppError> {
+    pub fn create(&self, user_id: &str, details: TradeDetails) -> Result<TradeId, AppError> {
         // Ensure the trade details are all present and correct
         details.validate()?; // Converts to AppError with "From"
 
@@ -74,7 +74,7 @@ impl<'a> TradeEngine {
     }
 
     /// Transition a draft trade to a pending approval state.
-    pub fn submit(&mut self, user_id: &str, trade_id: TradeId) -> Result<(), AppError> {
+    pub fn submit(&self, user_id: &str, trade_id: TradeId) -> Result<(), AppError> {
         // Grab the trade from the trade id
         let mut trade = self.fetch_trade(trade_id)?; // ValidationError becomes AppError with "From"
 
@@ -109,7 +109,7 @@ impl<'a> TradeEngine {
     /// A user is approving a trade for execution
     /// Applies to trades in PendingApproval or NeedsReapproval
     /// Business rule: only the original requester can re-approve a trade
-    pub fn approve(&mut self, user_id: &str, trade_id: TradeId) -> Result<(), AppError> {
+    pub fn approve(&self, user_id: &str, trade_id: TradeId) -> Result<(), AppError> {
         // Grab the trade from the trade id
         let mut trade = self.fetch_trade(trade_id).map_err(|err| {
             let app_err: AppError = err.into();
@@ -172,7 +172,7 @@ impl<'a> TradeEngine {
     /// Cancel a trade
     /// Applies to trades in Draft, PendingApproval, NeedsReapproval, Approved
     /// and possibly SentToCounterparty, but not Executed or Cancelled
-    pub fn cancel(&mut self, user_id: &str, trade_id: TradeId) -> Result<(), AppError> {
+    pub fn cancel(&self, user_id: &str, trade_id: TradeId) -> Result<(), AppError> {
         // Grab the trade from the trade id
         let mut trade = self.fetch_trade(trade_id).map_err(|err| {
             let app_err: AppError = err.into();
@@ -207,7 +207,7 @@ impl<'a> TradeEngine {
 
     /// Update trade details
     /// Can only be done if trade has not been sent to counterparty and beyond
-    pub fn update(&mut self, user_id: &str, trade_id: TradeId, details: TradeDetails) -> Result<(), AppError> {
+    pub fn update(&self, user_id: &str, trade_id: TradeId, details: TradeDetails) -> Result<(), AppError> {
         // Ensure the incoming trade details are all present and correct
         details.validate()?;
 
@@ -248,7 +248,7 @@ impl<'a> TradeEngine {
     }
 
     /// Send a trade to the counterparty for execution
-    pub fn send_to_execute(&mut self, user_id: &str, trade_id: TradeId) -> Result<(), AppError> {
+    pub fn send_to_execute(&self, user_id: &str, trade_id: TradeId) -> Result<(), AppError> {
         // Grab the trade from the trade id
         let mut trade = self.fetch_trade(trade_id).map_err(|err| {
             let app_err: AppError = err.into();
@@ -285,7 +285,7 @@ impl<'a> TradeEngine {
 
     /// Marks a trade as executed
     /// Applies to trades in SentToCounterparty only
-    pub fn book(&mut self, user_id: &str, trade_id: TradeId) -> Result<(), AppError> {
+    pub fn book(&self, user_id: &str, trade_id: TradeId) -> Result<(), AppError> {
         let mut trade = self.fetch_trade(trade_id).map_err(|err| {
             let app_err: AppError = err.into();
             app_err.with_tags(&["book"])
