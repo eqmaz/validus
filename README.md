@@ -1,6 +1,6 @@
 # WIP (LIVE UPDATES COMING)
 
-## Solution is work in progress; App already runs -  works with output. 
+## Improvement in progress; App runs 3x example scenarios. 
 
 ### The scaffold here should give you a good idea of my approach, patterns and direction. Will be complete before our meeting / or in the next few hours. Feel free to track commits.
 
@@ -10,16 +10,33 @@
 See Makefile - ``make help``<br>
 Just run ``make run``
 
-### Example output (hello world)
+### console output (3x scenarios as per brief)
 ```text
-[2025-04-10 12:56:08.960] ✔ Config initialized from config.toml
-[2025-04-10 12:56:08.960] ✔ Logger initialized to ./logs/app.log [debug]
-[2025-04-10 12:56:08.960] ✔ App Started!
-[2025-04-10 12:56:08.961] ℹ Trade one created with ID: 185749655617839104 and status Draft
-[2025-04-10 12:56:08.961] ℹ Trade one history count: 1
-[2025-04-10 12:56:08.961] ℹ Trade status after submission: PendingApproval
-[2025-04-10 12:56:08.961] ℹ Trade one history count: 2
-[2025-04-10 12:56:08.961] ℹ Trade status after approval: Approved
+[2025-04-10 17:16:05.010] ✔ Config initialized from config.toml
+[2025-04-10 17:16:05.010] ✔ Logger initialized to ./logs/app.log [debug]
+[2025-04-10 17:16:05.011] ✔ App Started!
+[2025-04-10 17:16:05.011] ℹ Hello world scenario
+[2025-04-10 17:16:05.011] ✔      -> First trade created with ID: 185815070192738304 and status Draft
+[2025-04-10 17:16:05.011] ✔      -> Trade history count: 1
+
+[2025-04-10 17:16:05.011] ℹ Scenario 1 :: Submitting and Approving a Trade
+[2025-04-10 17:16:05.011] ✔      -> Trade created with ID: 185815070192738305 and status Draft
+[2025-04-10 17:16:05.011] ✔      -> Trade status after submission: PendingApproval
+[2025-04-10 17:16:05.011] ✔      -> Notional amount form trade details: 55.6
+[2025-04-10 17:16:05.011] ✔      -> Trade status after approval: Approved
+[2025-04-10 17:16:05.011] ✔      -> Trade status after approval: Approved
+
+[2025-04-10 17:16:05.011] ℹ Scenario 2 :: An approver updates the trade details, requiring re-approval.
+[2025-04-10 17:16:05.011] ✔      -> Trade created with ID: 185815070192738306 and status Draft
+[2025-04-10 17:16:05.011] ✔      -> Trade status after update: NeedsReapproval
+[2025-04-10 17:16:05.011] ✔      -> Trade status after re-approval: Approved
+
+[2025-04-10 17:16:05.011] ℹ Scenario 1 :: Approved trade sent to counterparty & marked as executed.
+[2025-04-10 17:16:05.011] ✔      -> Trade created with ID: 185815070192738307 and status Draft
+[2025-04-10 17:16:05.011] ✔      -> Trade status after submission: PendingApproval
+[2025-04-10 17:16:05.012] ✔      -> Trade status after approval: Approved
+[2025-04-10 17:16:05.012] ✔      -> Trade status after sending to counterparty: SentToCounterparty
+[2025-04-10 17:16:05.012] ✔      -> Trade status after execution: Executed
 ```
 
 
