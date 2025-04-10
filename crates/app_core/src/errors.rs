@@ -288,6 +288,13 @@ impl Error for AppError {
     }
 }
 
+/// Support conversion of plain strings into `AppError` with ? operator.
+impl From<String> for AppError {
+    fn from(msg: String) -> Self {
+        AppError::new("E000", msg)
+    }
+}
+
 /// Trait extension to convert any error into an `AppError` with `.appify()`.
 pub trait IntoAppError {
     fn appify(self) -> AppError;
