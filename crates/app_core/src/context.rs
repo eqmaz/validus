@@ -2,7 +2,9 @@ use crate::config::{init_global_config, typed_config};
 use crate::{console, sout, AppError, Logger};
 use ctrlc;
 use std::collections::HashMap;
+use std::future::Future;
 use std::path::PathBuf;
+use std::pin::Pin;
 use std::sync::{Arc, Mutex};
 
 // == Type shortcuts -----
@@ -218,16 +220,10 @@ impl AppContext {
     where
         T: 'static + Send + Sync + FeatureMapProvider + serde::de::DeserializeOwned,
     {
-        //let config = ConfigManager::get::<T>();
+        // Get hold of the config struct,
+        // Iterate over the feature flags and save them within our own feature flag map
         let config = typed_config::<T>();
-
-        // Log config struct
-        sout!("Number of feature flags: {}", config.feature_map().len());
-
         for (k, v) in config.feature_map() {
-            // print the next feature flag
-            sout!("Feature flag: {} = {}", k, v);
-
             self.feature_flags.lock().unwrap().insert(k.clone(), *v);
         }
     }
@@ -255,7 +251,8 @@ impl AppContext {
     //  to have a global error handler(S) on top of the idiomatic error pipeline
     //  may want to run those callbacks in a separate thread
 
-    /// Run the application entrypoint (userland provided function)
+    /// Run the application entrypoint function (sync - no tokio)
+    /// It should return a Result of () or AppError
     pub fn start<F>(mut self, entrypoint: F)
     where
         F: FnOnce(&mut Self) -> Result<(), AppError>,
@@ -268,6 +265,23 @@ impl AppContext {
             err.log_and_display();
             // std::process::exit(1);
         }
+        self.shutdown();
+    }
+
+    /// Use start_async to run an async entrypoint (tokio runtime apps, etc)
+    /// It's future should return a Result of () or AppError
+    pub async fn start_async(
+        mut self,
+        entrypoint: fn(&mut Self) -> Pin<Box<dyn Future<Output = Result<(), AppError>> + Send + '_>>,
+    ) {
+        self.handle_signals();
+
+        let result = entrypoint(&mut self).await;
+
+        if let Err(err) = result {
+            err.log_and_display();
+        }
+
         self.shutdown();
     }
 

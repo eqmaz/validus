@@ -1,3 +1,4 @@
+mod api;
 mod app_config;
 mod app_entry;
 mod app_errors;
@@ -16,12 +17,13 @@ extern crate app_core;
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 const LOG_STREAM: &'static str = "./logs/app.log";
 const LOG_LEVEL: &'static str = "debug";
-const CFG_FILE: &'static str = "config.toml";
+const CFG_FILE: &'static str = "app.toml";
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // Application bootstrap. See app_entry.rs for business logic.
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-fn main() {
+#[tokio::main]
+async fn main() {
     // Config file search paths, relative to the executable's location
     let config_paths = vec![
         PathBuf::from("./config"), //PathBuf::from(".")
@@ -34,11 +36,12 @@ fn main() {
         .with_logger(LOG_STREAM, LOG_LEVEL);
 
     // Initialize the application context (Config struct in app_config.rs)
-    let app = AppContext::init::<AppConfig>(opts);
+    let mut app = AppContext::init::<AppConfig>(opts);
 
     // Parse the config file for feature flags
-    app.extract_feature_flags::<AppConfig>();
+    app.extract_feature_flags::<AppConfig>(); // in-place
 
     // Start the business logic
-    app.start(app_entry::run)
+    // app.start(app_entry::run) // sync
+    app.start_async(app_entry::run).await;
 }
