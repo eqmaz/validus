@@ -1,4 +1,4 @@
-use app_core::config::ConfigManager;
+use app_core::config::config_int;
 use app_core::AppError;
 use serde_json::json;
 use std::sync::{Arc, Mutex};
@@ -45,7 +45,7 @@ impl<'a> TradeEngine {
     /// The instance is thread safe and contains the storage (whether in-memory or other)
     pub fn new(store: InMemoryStore) -> Self {
         // For the snowflake ID generator, use a config-based machine ID
-        let machine_id = ConfigManager::get_int("engine.machine_id").unwrap_or(10) as u16;
+        let machine_id = config_int("engine.machine_id").unwrap_or(10) as u16;
 
         // wrap the store in an Arc<Mutex for thread safety
         let store: Arc<Mutex<dyn TradeStore>> = Arc::new(Mutex::new(store));
