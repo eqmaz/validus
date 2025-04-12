@@ -4,10 +4,14 @@ debug = true
 # Feature flags
 [features]
 dev_mode = true
+rest_api = true
+
+[rest]
+bind_on = "127.0.0.1:8080"
 
 # Logging configuration
 [logging]
-file   = "./logs/app.log"
+output = "./logs/app.log"
 level  = "info"
 format = "json"
 

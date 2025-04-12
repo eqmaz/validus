@@ -19,6 +19,9 @@ pub struct AppConfig {
     pub engine: EngineConfig,
 
     #[serde(default)]
+    pub rest: RestConfig,
+
+    #[serde(default)]
     pub debug: bool,
 }
 
@@ -31,15 +34,17 @@ impl FeatureMapProvider for AppConfig {
 
 #[derive(Debug, Deserialize)]
 pub struct LogConfig {
-    pub level: String,
     pub output: String,
+    pub level: String,
+    pub format: String,
 }
 
 impl Default for LogConfig {
     fn default() -> Self {
         Self {
-            level: "info".to_string(),
             output: "./logs/app.log".to_string(),
+            level: "info".to_string(),
+            format: "json".to_string(),
         }
     }
 }
@@ -54,12 +59,25 @@ impl Default for EngineConfig {
     }
 }
 
+#[derive(Debug, Deserialize)]
+pub struct RestConfig {
+    pub bind_on: String,
+}
+impl Default for RestConfig {
+    fn default() -> Self {
+        Self {
+            bind_on: "0.0.0.0:8080".to_string(),
+        }
+    }
+}
+
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
             logging: LogConfig::default(),
             features: HashMap::new(),
             engine: Default::default(),
+            rest: Default::default(),
             debug: false,
         }
     }

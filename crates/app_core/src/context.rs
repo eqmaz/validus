@@ -272,7 +272,7 @@ impl AppContext {
     /// It's future should return a Result of () or AppError
     pub async fn start_async(
         mut self,
-        entrypoint: fn(&mut Self) -> Pin<Box<dyn Future<Output = Result<(), AppError>> + Send + '_>>,
+        entrypoint: for<'a> fn(&'a mut Self) -> Pin<Box<dyn Future<Output = Result<(), AppError>> + Send + 'a>>,
     ) {
         self.handle_signals();
 

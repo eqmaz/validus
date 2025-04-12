@@ -22,6 +22,7 @@ const CFG_FILE: &'static str = "app.toml";
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // Application bootstrap. See app_entry.rs for business logic.
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 #[tokio::main]
 async fn main() {
     // Config file search paths, relative to the executable's location
@@ -43,5 +44,6 @@ async fn main() {
 
     // Start the business logic
     // app.start(app_entry::run) // sync
-    app.start_async(app_entry::run).await;
+    //app.start_async(app_entry::run).await;
+    app.start_async(app_entry::run_boxed).await;
 }

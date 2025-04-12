@@ -2,9 +2,9 @@
 .SILENT:
 
 # Configuration
-PACKAGE_NAME=validus
+PACKAGE_NAME=validus_trade
 BUILD_DIR=target
-RELEASE_DIR=$(BUILD_DIR)/release
+RELEASE_DIR=$(BUILD_DIR)/debug
 BINARY=$(RELEASE_DIR)/$(PACKAGE_NAME)
 DOCKER_IMAGE := validus
 DOCKER_CONTAINER := validus
@@ -14,6 +14,7 @@ DOCKER_CONTAINER := validus
 help:
 	echo "Usage:"
 	echo "  make run             - Compile and run project"
+	echo "  make auto            - Run the app, or recompile and run if any source files changed"
 	echo "  make start           - Run compiled binary"
 	echo "  make all             - Full pipeline: format, check, test, build"
 	echo "  make format          - Format source files"
@@ -23,6 +24,10 @@ help:
 	echo "  make release         - Build optimized release binary"
 	echo "  make release-min     - Build with minimal size optimizations"
 	echo "  make update          - Update Cargo dependencies"
+	echo ""
+	echo "REST API Code Generation:"
+	echo "  make gen-api         - Generate REST API code"
+	echo "  make gen-api-docs    - Generate REST API docs to _docs/api"
 	echo ""
 	echo "Testing:"
 	echo "  make test            - Run all unit tests"
@@ -78,6 +83,13 @@ run: format check
 start:
 	$(BINARY)
 
+.PHONY: auto
+auto: $(BINARY)
+	$(BINARY)
+
+$(BINARY): $(shell find src crates -type f -name '*.rs') Cargo.toml Cargo.lock
+	cargo build
+
 .PHONY: clean
 clean:
 	cargo clean
@@ -89,6 +101,17 @@ update:
 .PHONY: all
 all: format check test build run
 
+# ==========================
+# Code Generation
+# ==========================
+.PHONY: gen-api
+gen-api:
+	# Use the java executable directly if the shortcut openapi-generator can't pass on parameters properly
+	#java -jar /usr/local/bin/openapi-generator-cli.jar generate \
+	openapi-generator generate \
+		-g rust-axum \
+		-i openapi/rest.yaml \
+		-o crates/openapi/
 
 # ==========================
 # Docker Commands
