@@ -86,12 +86,18 @@ pub fn out<T: std::fmt::Display>(value: T) {
 /// # Arguments
 /// * `code` - A tag or error code label (e.g., "ERROR", "FATAL")
 /// * `value` - The error message
-#[allow(dead_code)]
 pub fn eout<T: std::fmt::Display>(code: &str, value: T) {
     let msg = format!("✖ [{}] {}", code, value.to_string());
     let payload = colorize(&msg, COLOR_RED);
     //eprintln!("{} {:?}", current_time(), payload); // Prints the debug representation (escapes formatting)
     eprintln!("{} {}", colorize(&current_time(), COLOR_GREY), payload);
+}
+
+/// Contextual Debug output with magenta wrench icon
+pub fn dout<T: std::fmt::Display>(value: T) {
+    let msg = format!("🛠 {}", value.to_string());
+    let payload = colorize(&msg, crate::COLOR_MAGENTA);
+    out(&payload);
 }
 
 /// Contextual Success output with green checkmark

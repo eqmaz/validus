@@ -16,19 +16,8 @@
 //! **Testability:**
 //!   - Avoids global state in unit tests by calling `ConfigManager::<T>::load()` directly.
 //!   - Uses the same API for raw lookups: `get_value()`, `get_bool()`, etc.
-//!
-//! Example:
-//! ```toml
-//! [logging]
-//! level = "debug"
-//! ```
-//!
-//! ```rust
-//! let cfg = config::<AppConfig>();
-//! let level = cfg.get_value("logging.level");
-//! ```
 
-use crate::{wout};
+use crate::wout;
 use config::{Config as RawConfig, File, FileFormat};
 use once_cell::sync::OnceCell;
 use serde::de::DeserializeOwned;
@@ -209,10 +198,10 @@ pub fn config_bool(key: &str) -> Option<bool> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::console;
     use serde::Deserialize;
     use std::fs;
     use tempfile::tempdir;
-    use crate::console;
 
     #[allow(dead_code)]
     #[derive(Debug, Deserialize, Default)]
@@ -248,7 +237,7 @@ mod tests {
             rest_api = true
         "#,
         )
-            .unwrap();
+        .unwrap();
 
         let config = ConfigManager::<MyConfig>::load(&[dir.path().to_path_buf()], "app.toml");
 
@@ -307,7 +296,7 @@ mod tests {
             scale = 1.5
         "#,
         )
-            .unwrap();
+        .unwrap();
 
         let config = ConfigManager::<NumericConfig>::load(&[dir.path().to_path_buf()], "num.toml");
 
@@ -342,7 +331,7 @@ mod tests {
                 file = "global.log"
             "#,
             )
-                .unwrap();
+            .unwrap();
 
             init_global_config::<MyConfig>(&[dir.path().to_path_buf()], "app.toml");
 

@@ -72,6 +72,15 @@ macro_rules! eout {
     };
 }
 
+/// Macro: Print a debug  message
+/// Usage: `debug!("Retrying connection...");`
+#[macro_export]
+macro_rules! debug {
+    ($($arg:tt)*) => {
+        $crate::console::dout(format!($($arg)*));
+    };
+}
+
 // #[macro_export]
 // macro_rules! warn_and_console {
 //     ($msg:expr) => {{
