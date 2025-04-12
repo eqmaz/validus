@@ -1,4 +1,5 @@
-use crate::{config::ConfigManager, console, sout, AppError, Logger};
+use crate::config::{init_global_config, typed_config};
+use crate::{console, sout, AppError, Logger};
 use ctrlc;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -155,12 +156,14 @@ impl AppContext {
     /// Set up the ConfigManager
     fn init_config<T>(opts: &AppInitOptions<T>)
     where
-        T: serde::de::DeserializeOwned + Send + Sync + 'static,
+        T: serde::de::DeserializeOwned + Default + Send + Sync + 'static,
     {
         if let Some(cfg) = &opts.config {
-            // TODO later - instead of panic, we should return a Result
-            ConfigManager::init::<T>(&cfg.search_paths, &cfg.file_name);
-            //ConfigManager:: // TODO - config manager should keep record of actually loaded config files / sources
+            // TODO 1 later - instead of panic, we should return a Result
+            // TODO 2 - config manager should keep record of actually loaded config files / sources
+            init_global_config::<T>(&cfg.search_paths, &cfg.file_name);
+            //ConfigManager::init::<T>(&cfg.search_paths, &cfg.file_name);
+
             sout!("Config initialized from {}", cfg.file_name);
         }
     }
@@ -187,7 +190,7 @@ impl AppContext {
     ///        because ConfigManager needs it
     pub fn init<T>(opts: AppInitOptions<T>) -> Self
     where
-        T: serde::de::DeserializeOwned + Send + Sync + 'static,
+        T: serde::de::DeserializeOwned + Default + Send + Sync + 'static,
     {
         Self::init_config(&opts);
         Self::init_logger(&opts);
@@ -211,22 +214,32 @@ impl AppContext {
 
     /// Similar to `with_feature_flags`, but loads from the config manager
     /// Looks for the `features` field in the config struct
-    pub fn extract_feature_flags<T>(&self) -> &Self
+    pub fn extract_feature_flags<T>(&mut self)
     where
         T: 'static + Send + Sync + FeatureMapProvider + serde::de::DeserializeOwned,
     {
-        {
-            let config = ConfigManager::get::<T>();
-            for (k, v) in config.feature_map() {
-                self.feature_flags.lock().unwrap().insert(k.clone(), *v);
-            }
+        //let config = ConfigManager::get::<T>();
+        let config = typed_config::<T>();
+
+        // Log config struct
+        sout!("Number of feature flags: {}", config.feature_map().len());
+
+        for (k, v) in config.feature_map() {
+            // print the next feature flag
+            sout!("Feature flag: {} = {}", k, v);
+
+            self.feature_flags.lock().unwrap().insert(k.clone(), *v);
         }
-        &self
     }
 
     /// Query feature flag at runtime
     pub fn feature_enabled(&self, key: &str) -> bool {
         self.feature_flags.is_enabled(key)
+    }
+
+    /// Get a full map of feature flags and their status.
+    pub fn feature_flag_map(&self) -> HashMap<String, bool> {
+        self.feature_flags.lock().unwrap().clone()
     }
 
     /// Register shutdown callback(s) (they get executed in reverse order)
