@@ -5,6 +5,8 @@ debug = true
 [features]
 dev_mode = true
 rest_api = true
+grpc_api = false
+fix_api  = false
 
 [rest]
 bind_on = "127.0.0.1:8080"

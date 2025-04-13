@@ -1,16 +1,56 @@
-# WIP (LIVE UPDATES COMING)
+# CASE STUDY: TRADE APPROVAL SERVICE
 
-## Improvement in progress; App runs 3x example scenarios. 
+Trades can be submitted for approval, following a structured workflow. The workflow is contained within an independently testable library (trade_core). 
+A user can submit trade details for approval through an API layer - a basic REST scaffold is provided. 
 
-### The scaffold here should give you a good idea of my approach, patterns and direction. Will be complete before our meeting / or in the next few hours. Feel free to track commits.
+[Supported actions](./_docs/trade_actions.md)
 
-### With every new commit, it will still run without issue. Docs will be updated accordingly 
+[Trade model](./_docs/trade_model.md)
+
+[Trade states](./_docs/trade_states.md)
 
 ### Getting started
-See Makefile - ``make help``<br>
-Just run ``make run``
+See Makefile for details ``make help`` or ``make run``
+```shell
+make help
+make auto
+```
+To run the application you will **not need** to re-generate the REST API boilerplate code, 
+as it's included in the repo. Note that ``make gen-api`` requires the openapi-generator-cli dependency. 
+There is an installer in ``openapi/install-openapi-gen.sh``
 
-### console output (3x scenarios as per brief)
+## Application layers
+```text
+    ┌────────────────────────────┐
+    │    [ Some Public API ]     │  ← REST / gRPC / FIX / (bolt-on layer)
+    └────────────▲───────────────┘
+                 │
+    ┌────────────────────────────┐
+    │    [ Service layer ]       │  ← DDD orchestration layer with higher level business logic
+    └────────────▲───────────────┘
+                 │         
+    ┌────────────┴───────────────┐
+    │    Trade Core Library      │  ← Public API Surface (internal trade workflow library)
+    ├────────────────────────────┤
+    │ Models                     │
+    │ State Machine Logic        │
+    │ Validation Rules           │
+    | In-memory Store / History  │
+    └────────────────────────────┘
+  └────────────────────────────────┘ <<-------->> all sits on top of my own app_core mini framework
+  
+   !Everything built from scratch!        
+```
+
+## Test scenarios
+The aplication will automatically run the test scenarios as per the brief, on start up, providing the config file has the following feature flag enabled:
+```toml
+[features]
+dev_mode = true
+```
+These functions live in the application's service layer and are invoked once. Setting dev_mode to false will disable them from running.
+
+### Console output for the scenarios as per brief
 ```text
 [2025-04-10 17:16:05.010] ✔ Config initialized from config.toml
 [2025-04-10 17:16:05.010] ✔ Logger initialized to ./logs/app.log [debug]
@@ -65,52 +105,38 @@ Changed by: userTrader1 → userTrader1
 Timestamp: 2025-04-10 20:59:10.498492024 UTC → 2025-04-10 20:59:10.498676039 UTC
 Changed fields:
   notional_amount: 468.22 → 368.02
-
 ```
 
-### Public API coming...
+## App entry point:
+/src/app_entry.rs
 
-## Application layers
-```text
-    ┌────────────────────────────┐
-    │    [ Some Public API ]     │  ← REST / gRPC / FIX / (bolt-on layer)
-    └────────────▲───────────────┘
-                 │
-    ┌────────────────────────────┐
-    │    [ Service layer ]       │  ← DDD orchestration layer with higher level business logic
-    └────────────▲───────────────┘
-                 │         
-    ┌────────────┴───────────────┐
-    │    Trade Core Library      │  ← Public API Surface (internal trade workflow library)
-    ├────────────────────────────┤
-    │ Models                     │
-    │ State Machine Logic        │
-    │ Validation Rules           │
-    | In-memory Store / History  │
-    └────────────────────────────┘
-  └────────────────────────────────┘ <<-------->> all sits on top of my own app_core mini framework
-  
-   !Everything built from scratch!        
-```
-
-
-## Coming shortly:
- - Better thread-safe performance in the engine (locking at more granular level etc)
- - API layer to support REST or gRPC requests
- - Few more tests
-
-## Application includes:
+## What the app includes
 - Functions to demo the example scenarios (scenario1, scenario2 etc)
 - Trade engine library with models, state machine, validations, public method based API
   - create, submit, approve, reapprove, send-to-execute, book, history, diff etc
 - A Snowflake based ID generator for trade IDs
-- Abstracted TradeStore with in-memory implementation, interchangeable to DB etc 
+- Abstracted TradeStore with in-memory implementation, interchangeable to DB etc
 - Service layer to interface between trade_core and any public API (REST, FIX, etc)
 - Micro App framework (app_core) with config loading, logging, console, errors etc
+- OpenAPI spec in yaml with code generator for RUST boilerplate code
+- A simple REST API implementation with a couple of endpoints and stubs
 - Clean main file just bootstraps dependencies and runs the app entry point
 - Makefile for easy commands
-- A few unit tests, more coming
+- A few unit tests
 - Docs
 
+## Does not include:
+- Authentication awareness (it's a hypothetical service)
+- Complete REST API (just the create and history endpoints + stubs)
+
+## What could be improved:
+ - Better thread-safe performance in the engine (locking at more granular level etc)
+ - Better memory efficiency in the in-memory store (not duplicating data)
+ - User authentication stubs / awareness 
+ - A nice integration test suite
+ - Nice validation layer for public API surface
+ - Standardised REST response and error shapes
+ - app_core framework is really basic
+ - Versioning
 
 ## Cheers, speak soon!
