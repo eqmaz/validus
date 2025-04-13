@@ -13,7 +13,7 @@
 #[allow(dead_code)]
 use app_core::AppError;
 use rust_decimal::prelude::*;
-use trade_core::model::{Currency, Direction, TradeDetails};
+use trade_core::model::{Currency, Direction, TradeDetails, TradeEventSnapshot};
 
 use crate::service::trading_utils::history_to_table;
 use crate::state::trading_state::engine;
@@ -21,32 +21,42 @@ use crate::state::trading_state::engine;
 const USER_TRADER_1: &str = "userTrader1";
 const USER_ADMIN_1: &str = "userAdmin1";
 
+pub fn create_trade(user_id: &str, details: TradeDetails) -> Result<String, AppError> {
+    let trade_id = engine().create(user_id, details)?;
+    Ok(trade_id.to_string())
+}
+
+pub fn trade_history(trade_id: u64) -> Result<Vec<TradeEventSnapshot>, AppError> {
+    let history = engine().trade_history(trade_id)?;
+    Ok(history)
+}
+
 pub(crate) fn trade_hello_world() -> Result<(), AppError> {
     let engine = engine();
 
     iout!("Hello world scenario");
 
-    // Create a new trade
-    let new_trade = TradeDetails {
-        trading_entity: "foo".to_string(),
-        counterparty: "bar".to_string(),
-        direction: Direction::Buy,
-        notional_currency: Currency::GBP,
-        notional_amount: Decimal::from_str("100.1").unwrap(),
-        underlying: vec![Currency::GBP, Currency::USD],
-        trade_date: Default::default(),
-        value_date: Default::default(),
-        delivery_date: Default::default(),
-        strike: None,
-    };
+        // Create a new trade
+        let new_trade = TradeDetails {
+            trading_entity: "foo".to_string(),
+            counterparty: "bar".to_string(),
+            direction: Direction::Buy,
+            notional_currency: Currency::GBP,
+            notional_amount: Decimal::from_str("100.1").unwrap(),
+            underlying: vec![Currency::GBP, Currency::USD],
+            trade_date: Default::default(),
+            value_date: Default::default(),
+            delivery_date: Default::default(),
+            strike: None,
+        };
 
-    let trade_one = engine.create(USER_TRADER_1, new_trade)?;
-    let trade_one_status = engine.trade_get_status(trade_one)?;
-    sout!(
-        "\t -> First trade created with ID: {} and status {:?}",
-        trade_one,
-        trade_one_status
-    );
+        let trade_one = engine.create(USER_TRADER_1, new_trade)?;
+        let trade_one_status = engine.trade_get_status(trade_one)?;
+        sout!(
+            "\t -> First trade created with ID: {} and status {:?}",
+            trade_one,
+            trade_one_status
+        );
 
     // there should be 1 item in the history
     let trade_one_hist = engine.trade_history(trade_one)?;
@@ -256,3 +266,4 @@ pub(crate) fn trade_hist_diff() -> Result<(), AppError> {
 
     Ok(())
 }
+

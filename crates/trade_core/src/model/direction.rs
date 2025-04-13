@@ -1,8 +1,9 @@
 use serde::{Deserialize, Serialize};
+use strum_macros::Display;
 
 /// Direction of the trade
 /// Future - could support long/short or other types of trades
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Display, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Direction {
     Buy,
     Sell,

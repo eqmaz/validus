@@ -36,16 +36,7 @@ axum = { version = "0.7" }
 axum-extra = { version = "0.9", features = ["cookie", "multipart"] }
 async-trait = "0.1"
 http = "1.0"
-#serde_json = "1"
-#bytes = "1.5"
-#base64 = "0.22" # For parsing form/query params
-#validator = { version = "0.20", features = ["derive"] }  # For field-level validation
-#uuid = { version = "1", features = ["serde"] } # For UUID types
-#serde_urlencoded = "0.7"
-
-# Optional for logging
-#tracing = { version = "0.1", features = ["attributes"] }
-#tracing-subscriber = "0.3"
+serde_json = "1.0.140"
 
 # To support stand-alone binary on Alpine container
 [profile.release]

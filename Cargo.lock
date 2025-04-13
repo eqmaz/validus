@@ -2357,6 +2357,7 @@ dependencies = [
  "prettytable",
  "rust_decimal",
  "serde",
+ "serde_json",
  "tokio",
  "trade_core",
 ]

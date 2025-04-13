@@ -14,6 +14,217 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HelloResponse"
+
+  /trade:
+    post:
+      summary: Create a new trade
+      operationId: createTrade
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TradeCreateRequest"
+      responses:
+        "200":
+          description: Trade created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TradeCreateResponse"
+
+    get:
+      summary: List trade IDs
+      operationId: listTrades
+      parameters:
+        - in: query
+          name: sort
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: List of trade IDs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
+  /trade/{id}:
+    get:
+      summary: Get trade status
+      operationId: getTradeStatus
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Current trade status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TradeStatus"
+
+    delete:
+      summary: Cancel a trade
+      operationId: cancelTrade
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Trade cancelled
+
+  /trade/{id}/details:
+    get:
+      summary: Get trade details
+      operationId: getTradeDetails
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Full trade details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TradeDetails"
+
+    put:
+      summary: Update trade details
+      operationId: updateTrade
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TradeDetails"
+      responses:
+        "204":
+          description: Trade updated
+
+  /trade/{id}/submit:
+    post:
+      summary: Submit a draft trade for approval
+      operationId: submitTrade
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Trade submitted
+
+  /trade/{id}/approve:
+    post:
+      summary: Approve a trade
+      operationId: approveTrade
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Trade approved
+
+  /trade/{id}/book:
+    post:
+      summary: Mark a trade as executed
+      operationId: bookTrade
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Trade booked
+
+  /trade/{id}/send:
+    post:
+      summary: Send trade to counterparty
+      operationId: sendTrade
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Trade sent
+
+  /trade/{id}/history:
+    get:
+      summary: Get trade history
+      operationId: getTradeHistory
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Full trade state/event history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TradeEvent"
+
+  /trade/{id}/diff:
+    get:
+      summary: Compare two trade versions
+      operationId: tradeDiff
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: v1
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: v2
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Field differences between two versions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TradeDiff"
+
+
+
 components:
   schemas:
     HelloResponse:
@@ -21,3 +232,79 @@ components:
       properties:
         message:
           type: string
+
+    TradeStatus:
+      type: object
+      properties:
+        state:
+          type: string
+
+    TradeCreateRequest:
+      type: object
+      properties:
+        userId:
+          type: string
+        details:
+          $ref: "#/components/schemas/TradeDetails"
+
+    TradeCreateResponse:
+      type: object
+      properties:
+        tradeId:
+          type: string
+
+    TradeDetails:
+      type: object
+      properties:
+        trading_entity:
+          type: string
+        counterparty:
+          type: string
+        direction:
+          type: string
+          enum: [Buy, Sell]
+        notional_currency:
+          type: string
+        notional_amount:
+          type: number
+          format: decimal
+        underlying:
+          type: array
+          items:
+            type: string
+        trade_date:
+          type: string
+          format: date-time
+        value_date:
+          type: string
+          format: date-time
+        delivery_date:
+          type: string
+          format: date-time
+        strike:
+          type: number
+
+    TradeEvent:
+      type: object
+      properties:
+        user_id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        state:
+          type: string
+        details:
+          $ref: "#/components/schemas/TradeDetails"
+
+    TradeDiff:
+      type: object
+      properties:
+        trade_id:
+          type: string
+        from_version:
+          type: integer
+        to_version:
+          type: integer
+        differences:
+          type: object

@@ -1,8 +1,9 @@
-use crate::errors::ValidationError;
-use crate::model::{Currency, Direction};
-use chrono::NaiveDate;
+use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
+
+use crate::errors::ValidationError;
+use crate::model::{Currency, Direction};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct TradeDetails {
@@ -12,9 +13,9 @@ pub struct TradeDetails {
     pub notional_currency: Currency, // Currency for better type safety
     pub notional_amount: Decimal,
     pub underlying: Vec<Currency>,
-    pub trade_date: NaiveDate,
-    pub value_date: NaiveDate,
-    pub delivery_date: NaiveDate,
+    pub trade_date: DateTime<Utc>,
+    pub value_date: DateTime<Utc>,
+    pub delivery_date: DateTime<Utc>,
     pub strike: Option<Decimal>, // Decimal for guaranteed precision
 }
 

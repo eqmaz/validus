@@ -402,9 +402,9 @@ impl<'a> TradeEngine {
 // = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 #[cfg(test)]
 mod tests {
+    use chrono::{TimeZone, Utc};
     use super::*;
     use crate::model::{Currency, Direction};
-    use chrono::NaiveDate;
     use rust_decimal_macros::dec;
 
     fn sample_trade_details() -> TradeDetails {
@@ -415,9 +415,9 @@ mod tests {
             notional_currency: Currency::USD,
             notional_amount: dec!(1_000_000.00),
             underlying: vec![Currency::EUR, Currency::GBP],
-            trade_date: NaiveDate::from_ymd_opt(2025, 4, 10).unwrap(),
-            value_date: NaiveDate::from_ymd_opt(2025, 4, 12).unwrap(),
-            delivery_date: NaiveDate::from_ymd_opt(2025, 4, 13).unwrap(),
+            trade_date: Utc.with_ymd_and_hms(2025, 4, 10, 0, 0, 0).unwrap(),
+            value_date: Utc.with_ymd_and_hms(2025, 4, 12, 0, 0, 0).unwrap(),
+            delivery_date: Utc.with_ymd_and_hms(2025, 4, 13, 0, 0, 0).unwrap(),
             strike: Some(dec!(1.2345)),
         }
     }

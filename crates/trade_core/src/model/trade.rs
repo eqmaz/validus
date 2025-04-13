@@ -1,12 +1,13 @@
 use crate::model::*;
 use chrono::{DateTime, Utc};
+use serde::Serialize;
 
 pub type TradeId = u64;
 pub type SnapshotId = usize;
 pub type UserId = String;
 pub type HistoryTable = Vec<(SnapshotId, UserId, TradeState, TradeState, DateTime<Utc>)>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct TradeEventSnapshot {
     pub snapshot_id: SnapshotId,
     pub user_id: UserId,

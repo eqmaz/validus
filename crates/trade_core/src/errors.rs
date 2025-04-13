@@ -1,8 +1,10 @@
-use crate::model::{Currency, TradeId, TradeState};
-use app_core::{AppError, ErrorCode};
-use chrono::NaiveDate;
+use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use serde_json::json;
+use app_core::{AppError, ErrorCode};
+
+use crate::model::{Currency, TradeId, TradeState};
+
 
 #[derive(Debug)]
 pub enum ErrCodes {
@@ -81,8 +83,8 @@ pub enum ValidationError {
     InvalidCurrency(Currency),
     EmptyUnderlying(String),
     NoUnderlyingCcy(Currency),
-    InvalidTradeDate(NaiveDate, String),
-    InvalidValueDate(NaiveDate, String),
+    InvalidTradeDate(DateTime<Utc>, String),
+    InvalidValueDate(DateTime<Utc>, String),
 }
 
 impl From<String> for ValidationError {
