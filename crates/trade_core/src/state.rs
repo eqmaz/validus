@@ -61,7 +61,7 @@ impl StateMachine {
             // Trade gets updated -> needs re-approval
             // We allow updates from Draft, PendingApproval, and POSSIBLY also NeedsReapproval
             // Debatable whether update is allowed from "cancelled"
-            (Update, Draft | PendingApproval | NeedsReapproval) => Ok(NeedsReapproval),
+            (Update, Draft | PendingApproval | Approved | NeedsReapproval) => Ok(NeedsReapproval),
 
             // Approved trade sent to counterparty -> "SentToCounterparty"
             (SendToExecute, Approved) => Ok(SentToCounterparty),
