@@ -83,6 +83,9 @@ impl StateMachine {
                 Err(ValidationError::InvalidTransition(from_state, from_state))
             }
 
+            // Can't submit (again) from PendingApproval or NeedsReapproval state
+            (Submit, PendingApproval | NeedsReapproval) => Err(ValidationError::InvalidAction(Submit, from_state)),
+
             // Can't cancel a cancelled trade
             (Cancel, Cancelled) => Err(ValidationError::AlreadyFinal(from_state)),
 
@@ -90,7 +93,7 @@ impl StateMachine {
             (_, Executed | Cancelled) => Err(ValidationError::AlreadyFinal(from_state)),
 
             // Catch-all for anything not explicitly supported above
-            _ => Err(ValidationError::InvalidTransition(from_state, from_state)),
+            _ => Err(ValidationError::InvalidAction(action, from_state)),
         }
     }
 }
@@ -233,7 +236,7 @@ mod tests {
     fn test_next_state_unknown_transition() {
         // Trying to send a draft trade to execution is invalid
         let result = sm().next_state(SendToExecute, Draft);
-        assert_eq!(result.unwrap_err(), ValidationError::InvalidTransition(Draft, Draft));
+        assert_eq!(result.unwrap_err(), ValidationError::InvalidAction(SendToExecute, Draft));
     }
 
     #[test]
@@ -249,7 +252,7 @@ mod tests {
         let result = sm().next_state(Submit, NeedsReapproval);
         assert!(matches!(
             result,
-            Err(ValidationError::InvalidTransition(NeedsReapproval, _))
+            Err(ValidationError::InvalidAction(Submit, NeedsReapproval))
         ));
     }
 }

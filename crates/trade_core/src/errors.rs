@@ -3,7 +3,7 @@ use rust_decimal::Decimal;
 use serde_json::json;
 use app_core::{AppError, ErrorCode};
 
-use crate::model::{Currency, TradeId, TradeState};
+use crate::model::{Currency, TradeAction, TradeId, TradeState};
 
 
 #[derive(Debug)]
@@ -11,6 +11,7 @@ pub enum ErrCodes {
     T0001, // User for re-approvals must be original requester
     TNF01, // Trade not found
     TST02, // Invalid state transition
+    TIA02, // Invalid action
     TDI03, // Invalid trade details
     TUA04, // Unauthorized action
     TIN05, // Internal error
@@ -31,6 +32,7 @@ impl ErrorCode for ErrCodes {
             ErrCodes::T0001 => "T0001",
             ErrCodes::TNF01 => "TNF01",
             ErrCodes::TST02 => "TST02",
+            ErrCodes::TIA02 => "TIA02",
             ErrCodes::TDI03 => "TDI03",
             ErrCodes::TUA04 => "TUA04",
             ErrCodes::TIN05 => "TIN05",
@@ -51,6 +53,7 @@ impl ErrorCode for ErrCodes {
             ErrCodes::T0001 => "User for re-approvals must be original requester",
             ErrCodes::TNF01 => "Trade not found",
             ErrCodes::TST02 => "Invalid state transition",
+            ErrCodes::TIA02 => "Invalid action",
             ErrCodes::TDI03 => "Invalid trade details",
             ErrCodes::TUA04 => "Unauthorized action",
             ErrCodes::TIN05 => "Internal error",
@@ -75,6 +78,7 @@ impl ErrorCode for ErrCodes {
 pub enum ValidationError {
     TradeNotFound(TradeId),
     InvalidTransition(TradeState, TradeState),
+    InvalidAction(TradeAction, TradeState),
     DetailsInvalid(String),
     Unauthorized(String),
     Internal(String),
@@ -103,6 +107,10 @@ impl From<ValidationError> for AppError {
             ValidationError::InvalidTransition(from, to) => {
                 let payload = json!({"from": from, "to": to});
                 AppError::from_code(ErrCodes::TST02, payload).with_tags(&["validation", "state"])
+            }
+            ValidationError::InvalidAction(action, state) => {
+                let payload = json!({"action": action, "state": state});
+                AppError::from_code(ErrCodes::TST02, payload).with_tags(&["validation", "action"])
             }
             ValidationError::DetailsInvalid(msg) => {
                 AppError::from_code(ErrCodes::TDI03, json!({ "reason": msg })).with_tags(&["validation", "details"])
