@@ -187,6 +187,10 @@ impl<'a> TradeEngine {
         if !self.state_machine.can_transition(state_now, state_new) {
             let err_data = json!({"user_id": user_id, "trade_id": trade_id});
             let err: AppError = ValidationError::InvalidTransition(state_now, state_new).into();
+
+            // write that we are here
+            println!("TradeEngine::cancel: trade_id: {}, state_now: {:?}, state_new: {:?} - failed", trade_id, state_now, state_new);
+
             return Err(err.with_tags(&["cancel"]).with_data("state", err_data));
         }
 
@@ -414,7 +418,7 @@ mod tests {
             direction: Direction::Buy,
             notional_currency: Currency::USD,
             notional_amount: dec!(1_000_000.00),
-            underlying: vec![Currency::EUR, Currency::GBP],
+            underlying: vec![Currency::EUR, Currency::GBP, Currency::USD],
             trade_date: Utc.with_ymd_and_hms(2025, 4, 10, 0, 0, 0).unwrap(),
             value_date: Utc.with_ymd_and_hms(2025, 4, 12, 0, 0, 0).unwrap(),
             delivery_date: Utc.with_ymd_and_hms(2025, 4, 13, 0, 0, 0).unwrap(),
@@ -424,6 +428,31 @@ mod tests {
 
     fn new_engine() -> TradeEngine {
         TradeEngine::new(InMemoryStore::new())
+    }
+
+    #[test]
+    fn test_submit_trade() {
+        let engine = new_engine();
+        let user_id = "alice";
+        let details = sample_trade_details();
+
+        // 1: Create trade
+        let trade_id = engine.create(user_id, details).expect("Trade creation failed");
+
+        // 2: Submit trade
+        let result = engine.submit(user_id, trade_id);
+        assert!(result.is_ok(), "Submit failed: {:?}", result);
+
+        // 3: Check trade state is now PendingApproval
+        let state = engine.trade_get_status(trade_id).expect("Failed to get trade state");
+        assert_eq!(state, TradeState::PendingApproval, "Trade state should be PendingApproval");
+
+        // 4: Try to submit again, should fail (InvalidTransition)
+        let result_again = engine.submit(user_id, trade_id);
+        assert!(result_again.is_err(), "Resubmitting should fail");
+
+        let err = result_again.unwrap_err();
+        assert_eq!(err.code(), "TST02", "Expected error code TST02 for invalid action");
     }
 
     #[test]
@@ -444,5 +473,335 @@ mod tests {
 
         let fetched_details = fetched.unwrap();
         assert_eq!(fetched_details, details, "Trade details mismatch");
+    }
+
+    #[test]
+    fn test_approve_trade_happy_path() {
+        let engine = new_engine();
+        let requester = "alice";
+        let approver = "bob"; // not the requester
+        let details = sample_trade_details();
+
+        // Create trade
+        let trade_id = engine.create(requester, details).expect("Trade creation failed");
+
+        // Submit it
+        engine.submit(requester, trade_id).expect("Submit failed");
+
+        // Approver (not requester) approves it
+        let result = engine.approve(approver, trade_id);
+        assert!(result.is_ok(), "Approve failed: {:?}", result);
+
+        // 4: Verify new state is Approved
+        let state = engine.trade_get_status(trade_id).expect("Failed to get status");
+        assert_eq!(state, TradeState::Approved, "Expected trade to be in Approved state");
+    }
+
+    #[test]
+    fn test_approve_trade_rejected_for_requester() {
+        let engine = new_engine();
+        let requester = "alice";
+        let details = sample_trade_details();
+
+        // Create trade
+        let trade_id = engine.create(requester, details).expect("Trade creation failed");
+
+        // Submit trade
+        engine.submit(requester, trade_id).expect("Submit failed");
+
+        // Requester tries to approve — this should fail
+        let result = engine.approve(requester, trade_id);
+        assert!(result.is_err(), "Requester should not be allowed to approve");
+
+        let err = result.unwrap_err();
+
+        // Expect error code TOR14 with tags
+        assert_eq!(err.code(), "TOR14", "Expected error code TOR14 for requester approval");
+        assert!(err.tags().contains(&"approve".into()), "Expected tag 'approve'");
+        assert!(err.tags().contains(&"requester".into()), "Expected tag 'requester'");
+    }
+
+    #[test]
+    fn test_reapproval_by_requester_allowed() {
+        let engine = new_engine();
+        let requester = "alice";
+        let approver = "bob";
+        let details = sample_trade_details();
+
+        // 1: Create + Submit
+        let trade_id = engine.create(requester, details.clone()).expect("Trade creation failed");
+        engine.submit(requester, trade_id).expect("Submit failed");
+
+        // 2: Approver approves
+        engine.approve(approver, trade_id).expect("Initial approval failed");
+
+        // 3: Approver updates the trade (triggers NeedsReapproval)
+        let mut new_details = details.clone();
+        new_details.strike = Some(dec!(1.2500)); // small change
+        engine.update(approver, trade_id, new_details).expect("Update failed");
+
+        // 4: Now requester re-approves
+        let result = engine.approve(requester, trade_id);
+        assert!(result.is_ok(), "Re-approval by requester should succeed: {:?}", result);
+
+        // 5: Check final state is Approved
+        let state = engine.trade_get_status(trade_id).expect("Failed to get state");
+        assert_eq!(state, TradeState::Approved, "Expected trade to be in Approved after re-approval");
+    }
+
+    #[test]
+    fn test_reapproval_rejected_for_non_requester() {
+        let engine = new_engine();
+        let requester = "alice";
+        let approver = "bob";
+        let intruder = "charlie";
+        let details = sample_trade_details();
+
+        // 1: Create + Submit
+        let trade_id = engine.create(requester, details.clone()).expect("Trade creation failed");
+        engine.submit(requester, trade_id).expect("Submit failed");
+
+        // 2: Approver approves
+        engine.approve(approver, trade_id).expect("Approval by bob failed");
+
+        // 3: Approver updates (triggers NeedsReapproval)
+        let mut modified_details = details.clone();
+        modified_details.strike = Some(dec!(1.3456));
+        engine.update(approver, trade_id, modified_details).expect("Update failed");
+
+        // 4: Non-requester (charlie) tries to re-approve — should be rejected
+        let result = engine.approve(intruder, trade_id);
+        assert!(result.is_err(), "Non-requester re-approval should fail");
+
+        let err = result.unwrap_err();
+
+        // Assert it's the correct code and tagging
+        assert_eq!(err.code(), "T0001", "Expected error code T0001 for invalid re-approver");
+        assert!(err.tags().contains(&"approve".into()), "Expected 'approve' tag");
+        assert!(err.tags().contains(&"re-approval".into()), "Expected 're-approval' tag");
+    }
+
+    #[test]
+    fn test_cancel_from_draft() {
+        let engine = new_engine();
+        let user = "alice";
+        let details = sample_trade_details();
+
+        // 1: Create trade (still in Draft)
+        let trade_id = engine.create(user, details).expect("Create failed");
+
+        // 2: Cancel it
+        let result = engine.cancel(user, trade_id);
+        if result.is_err() {
+            result.as_ref().err().unwrap().display_with_trace();
+        }
+        assert!(result.is_ok(), "Cancel from Draft should succeed");
+
+        // Step 3: Confirm state is Cancelled
+        let state = engine.trade_get_status(trade_id).expect("State fetch failed");
+        assert_eq!(state, TradeState::Cancelled, "Expected state to be Cancelled");
+    }
+
+    #[test]
+    fn test_cancel_after_executed_should_fail() {
+        let engine = new_engine();
+        let requester = "alice";
+        let approver = "bob";
+        let details = sample_trade_details();
+
+        // 1: Create → Submit → Approve
+        let trade_id = engine.create(requester, details.clone()).expect("Create failed");
+        engine.submit(requester, trade_id).expect("Submit failed");
+        engine.approve(approver, trade_id).expect("Approval failed");
+
+        // 2: Send to counterparty
+        engine.send_to_execute(approver, trade_id).expect("Send to counterparty failed");
+
+        // 3: Book (Executed)
+        engine.book(approver, trade_id).expect("Booking failed");
+
+        // 4: Attempt to cancel — should fail
+        let result = engine.cancel(approver, trade_id);
+        assert!(result.is_err(), "Cancel after execution should fail");
+
+        let err = result.unwrap_err();
+
+        // Assert error type
+        assert_eq!(err.code(), "TST02", "Expected error code TST02 for invalid transition");
+        assert!(err.tags().contains(&"state".into()), "Expected tag 'state'");
+        assert!(err.tags().contains(&"validation".into()), "Expected tag 'validation'");
+    }
+
+    #[test]
+    fn test_cancel_twice_should_fail() {
+        let engine = new_engine();
+        let user = "alice";
+        let details = sample_trade_details();
+
+        // Step 1: Create a trade in Draft state
+        let trade_id = engine.create(user, details).expect("Create failed");
+
+        // Step 2: Cancel it once (valid)
+        engine.cancel(user, trade_id).expect("Initial cancel should succeed");
+
+        // Step 3: Try cancel again — should fail
+        let result = engine.cancel(user, trade_id);
+        assert!(result.is_err(), "Second cancel should fail");
+
+        let err = result.unwrap_err();
+        assert_eq!(err.code(), "TST02", "Expected error code TST02 for invalid transition");
+        assert!(err.tags().contains(&"state".into()), "Expected tag 'state'");
+    }
+
+    #[test]
+    fn test_update_trade_details_success() {
+        let engine = new_engine();
+        let requester = "alice";
+        let approver = "bob";
+        let mut details = sample_trade_details();
+
+        // 1: Create, submit, approve
+        let trade_id = engine.create(requester, details.clone()).expect("Create failed");
+        engine.submit(requester, trade_id).expect("Submit failed");
+        engine.approve(approver, trade_id).expect("Approve failed");
+
+        // 2: Modify details
+        details.strike = Some(dec!(1.3333)); // small change
+
+        // 3: Update trade
+        let result = engine.update(approver, trade_id, details.clone());
+        assert!(result.is_ok(), "Update failed: {:?}", result);
+
+        // 4: Check state is now NeedsReapproval
+        let state = engine.trade_get_status(trade_id).expect("Get state failed");
+        assert_eq!(state, TradeState::NeedsReapproval, "Expected NeedsReapproval state");
+
+        // 5: Confirm updated details are present
+        let updated = engine.trade_details(trade_id).expect("Get details failed");
+        assert_eq!(updated, details, "Trade details should match updated");
+    }
+
+    #[test]
+    fn test_update_noop_should_fail() {
+        let engine = new_engine();
+        let requester = "alice";
+        let approver = "bob";
+        let details = sample_trade_details();
+
+        // : Create, submit, approve
+        let trade_id = engine.create(requester, details.clone()).expect("Create failed");
+        engine.submit(requester, trade_id).expect("Submit failed");
+        engine.approve(approver, trade_id).expect("Approve failed");
+
+        // 2: Try to update with the *same* details
+        let result = engine.update(approver, trade_id, details.clone());
+        assert!(result.is_err(), "No-op update should fail");
+
+        let err = result.unwrap_err();
+        assert_eq!(err.code(), "TDI13", "Expected TDI13 for no-op update");
+        assert!(err.tags().contains(&"update".into()), "Expected 'update' tag");
+        assert!(err.tags().contains(&"noop".into()), "Expected 'noop' tag");
+    }
+
+    #[test]
+    fn test_update_after_executed_should_fail() {
+        let engine = new_engine();
+        let requester = "alice";
+        let approver = "bob";
+        let mut details = sample_trade_details();
+
+        // 1: Create, Submit, Approve, Send, Book
+        let trade_id = engine.create(requester, details.clone()).expect("Create failed");
+        engine.submit(requester, trade_id).expect("Submit failed");
+        engine.approve(approver, trade_id).expect("Approve failed");
+        engine.send_to_execute(approver, trade_id).expect("Send failed");
+        engine.book(approver, trade_id).expect("Booking failed");
+
+        // 2: Try to update (should fail)
+        details.strike = Some(dec!(2.2222));
+        let result = engine.update(approver, trade_id, details);
+
+        assert!(result.is_err(), "Update after execution should fail");
+
+        let err = result.unwrap_err();
+        assert_eq!(err.code(), "TST02", "Expected error code TST02 for invalid transition");
+        assert!(err.tags().contains(&"state".into()), "Expected 'state' tag");
+    }
+
+    #[test]
+    fn test_send_to_execute_success() {
+        let engine = new_engine();
+        let requester = "alice";
+        let approver = "bob";
+        let details = sample_trade_details();
+
+        // 1: Create ➡️ Submit ➡️ Approve
+        let trade_id = engine.create(requester, details.clone()).expect("Create failed");
+        engine.submit(requester, trade_id).expect("Submit failed");
+        engine.approve(approver, trade_id).expect("Approve failed");
+
+        // 2: Send to counterparty
+        let result = engine.send_to_execute(approver, trade_id);
+        assert!(result.is_ok(), "send_to_execute should succeed");
+
+        // 3: Confirm state is now SentToCounterparty
+        let state = engine.trade_get_status(trade_id).expect("Failed to get state");
+        assert_eq!(state, TradeState::SentToCounterparty, "Expected SentToCounterparty state");
+    }
+
+    #[test]
+    fn test_send_from_draft_should_fail() {
+        let engine = new_engine();
+        let user = "alice";
+        let details = sample_trade_details();
+
+        // 1: Create trade — still in Draft
+        let trade_id = engine.create(user, details).expect("Create failed");
+
+        // 2: Attempt to send to execute (invalid from Draft)
+        let result = engine.send_to_execute(user, trade_id);
+        assert!(result.is_err(), "Send from Draft should fail");
+
+        let err = result.unwrap_err();
+        assert_eq!(err.code(), "TST02", "Expected TST02 for invalid transition");
+    }
+
+    #[test]
+    fn test_book_trade_success() {
+        let engine = new_engine();
+        let requester = "alice";
+        let approver = "bob";
+        let details = sample_trade_details();
+
+        // 1: Create, Submit, Approve, Send
+        let trade_id = engine.create(requester, details.clone()).expect("Create failed");
+        engine.submit(requester, trade_id).expect("Submit failed");
+        engine.approve(approver, trade_id).expect("Approve failed");
+        engine.send_to_execute(approver, trade_id).expect("Send failed");
+
+        // 2: Book the trade
+        let result = engine.book(approver, trade_id);
+        assert!(result.is_ok(), "Booking should succeed");
+
+        // 3: Confirm final state
+        let state = engine.trade_get_status(trade_id).expect("Get state failed");
+        assert_eq!(state, TradeState::Executed, "Expected state to be Executed");
+    }
+
+    #[test]
+    fn test_book_from_draft_should_fail() {
+        let engine = new_engine();
+        let user = "alice";
+        let details = sample_trade_details();
+
+        // 1: Create trade (still in Draft)
+        let trade_id = engine.create(user, details).expect("Create failed");
+
+        // 2: Try to book immediately — invalid
+        let result = engine.book(user, trade_id);
+        assert!(result.is_err(), "Booking from Draft should fail");
+
+        let err = result.unwrap_err();
+        assert_eq!(err.code(), "TST02", "Expected TST02 for invalid transition");
     }
 }

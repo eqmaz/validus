@@ -18,8 +18,8 @@ impl StateMachine {
             // New trade creation or "draft" = no state change
             (Draft, Draft) => true,
 
-            // Submitting a draft goes to pending approval
-            (Draft, PendingApproval) => true,
+            // Submitting a draft goes to pending approval, cancelling it goes to cancelled
+            (Draft, PendingApproval | Cancelled) => true,
 
             // Updating a draft can go to needs re-approval
             (Draft, NeedsReapproval) => true,

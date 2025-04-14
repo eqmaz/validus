@@ -323,6 +323,30 @@ impl AppError {
         self
     }
 
+    /// Pretty-print error and include structured backtrace info
+    pub fn display_with_trace(&self) -> &AppError {
+        self.display(); // Existing terminal-friendly output
+
+        let frames = self.trace_frames();
+        if frames.is_empty() {
+            console::eout("TRACE", "Backtrace is empty — run with `RUST_BACKTRACE=1` to enable.");
+            return self;
+        }
+
+        console::eout("TRACE", "Captured stack trace:");
+        for (i, frame) in frames.iter().enumerate() {
+            let location = match (&frame.file, frame.line) {
+                (Some(file), Some(line)) => format!("{}:{}", file, line),
+                (Some(file), None) => file.clone(),
+                _ => "unknown location".to_string(),
+            };
+
+            console::eout("↳", &format!("#{:<2} {} @ {}", i, frame.function, location));
+        }
+
+        self
+    }
+
     /// Log and display the error.
     /// Returns `self` for chaining.
     pub fn log_and_display(self) -> Self {

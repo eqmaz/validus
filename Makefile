@@ -53,7 +53,7 @@ format:
 
 .PHONY: test
 test:
-	cargo test
+	cargo test --workspace --all-targets --all-features
 
 .PHONY: test-app-core
 test-app-core:

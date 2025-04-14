@@ -64,7 +64,6 @@ These functions live in the application's service layer and are invoked once. Se
 [2025-04-10 17:16:05.011] ✔      -> Trade status after submission: PendingApproval
 [2025-04-10 17:16:05.011] ✔      -> Notional amount form trade details: 55.6
 [2025-04-10 17:16:05.011] ✔      -> Trade status after approval: Approved
-[2025-04-10 17:16:05.011] ✔      -> Trade status after approval: Approved
 
 [2025-04-10 17:16:05.011] ℹ Scenario 2 :: An approver updates the trade details, requiring re-approval.
 [2025-04-10 17:16:05.011] ✔      -> Trade created with ID: 185815070192738306 and status Draft
@@ -107,6 +106,18 @@ Changed fields:
   notional_amount: 468.22 → 368.02
 ```
 
+## Running unit and integration tests:
+All test runners accessible from Make
+```shell
+
+make help | grep test
+
+//  make test            - Run all unit tests
+//  make test-app-core   - Unit tests for app-core framework
+//  make test-trade-core - Unit tests for trade-core library
+```
+
+
 ## App entry point:
 /src/app_entry.rs
 
@@ -114,7 +125,7 @@ Changed fields:
 - Functions to demo the example scenarios (scenario1, scenario2 etc)
 - Trade engine library with models, state machine, validations, public method based API
   - create, submit, approve, reapprove, send-to-execute, book, history, diff etc
-- A Snowflake based ID generator for trade IDs
+- Snowflake based ID generator for trade IDs
 - Abstracted TradeStore with in-memory implementation, interchangeable to DB etc
 - Service layer to interface between trade_core and any public API (REST, FIX, etc)
 - Micro App framework (app_core) with config loading, logging, console, errors etc
@@ -122,21 +133,21 @@ Changed fields:
 - A simple REST API implementation with a couple of endpoints and stubs
 - Clean main file just bootstraps dependencies and runs the app entry point
 - Makefile for easy commands
-- A few unit tests
+- Unit tests for app_core and trade_core
 - Docs
 
 ## Does not include:
 - Authentication awareness (it's a hypothetical service)
-- Complete REST API (just the create and history endpoints + stubs)
+- The REST API only has create and history endpoints + stubs for the rest
 
 ## What could be improved:
  - Better thread-safe performance in the engine (locking at more granular level etc)
  - Better memory efficiency in the in-memory store (not duplicating data)
  - User authentication stubs / awareness 
- - A nice integration test suite
+ - A better integration test suite
  - Nice validation layer for public API surface
  - Standardised REST response and error shapes
  - app_core framework is really basic
- - Versioning
+ - Versioning & version bump automation
 
 ## Cheers, speak soon!
