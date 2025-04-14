@@ -143,6 +143,17 @@ mod tests {
     }
 
     #[test]
+    fn test_console_output_variants() {
+        // Just make sure no panic or formatting errors occur
+        // Redirecting stdout for capture is possible, but not needed unless snapshot testing
+        iout("info message");
+        wout("warn message");
+        dout("debug message");
+        sout("success message");
+        eout("ERROR", "This is an error");
+    }
+
+    #[test]
     fn test_colorize_when_disabled() {
         set_colors(false);
         let result = colorize("Hello", COLOR_GREEN);
@@ -157,10 +168,17 @@ mod tests {
     }
 
     #[test]
-    fn test_colorize() {
-        // We need to force IS_TTY to be true
-        let result = colorize("Hello", COLOR_GREEN);
-        assert!(result.starts_with(COLOR_GREEN));
-        assert!(result.ends_with(COLOR_RESET));
+    fn test_colorize_with_and_without_colors() {
+        set_colors(true);
+        let colored = colorize("Hello", COLOR_GREEN);
+        assert!(colored.contains(COLOR_GREEN));
+        assert!(colored.contains(COLOR_RESET));
+
+        set_colors(false);
+        let plain = colorize("Hello", COLOR_GREEN);
+        assert_eq!(plain, "Hello");
+
+        // Re-enable to not affect other tests
+        set_colors(true);
     }
 }

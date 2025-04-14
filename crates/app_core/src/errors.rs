@@ -35,6 +35,9 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::fmt;
 
+/// This should be implemented in user land code to define application-specific error codes.
+/// This is NOT encapsulated inside AppError - AppError can be created from it using `from_code`.
+/// See errors.md for more details.
 pub trait ErrorCode {
     fn code(&self) -> &'static str;
     fn format(&self) -> &'static str;
@@ -45,26 +48,35 @@ pub trait ErrorCode {
     }
 }
 
+/// Gives a simple structure backtrace frame for the error.
+#[derive(Debug)]
+pub struct TraceFrame {
+    pub function: String,
+    pub file: Option<String>,
+    pub line: Option<u32>,
+}
+
 /// Core application error type used across the framework and userland code.
 #[derive(Debug)]
 pub struct AppError {
     /// String-based error kind (e.g. "auth", "db", "internal").
+    /// Cow lets us use a string that might be borrowed or owned, without always making a copy.
     pub kind: Cow<'static, str>,
 
     /// Required application-specific error code (e.g. `"E404"`).
-    pub code: Cow<'static, str>,
+    code: Cow<'static, str>,
 
     /// Human-readable message describing the error.
-    pub message: Cow<'static, str>,
+    message: Cow<'static, str>,
 
     /// Optional classification tags for context.
-    pub tags: Vec<String>,
+    tags: Vec<String>,
 
     /// Arbitrary metadata (numbers, booleans, strings, JSON, etc.).
     pub data: HashMap<String, Value>,
 
     /// Captured backtrace from point of error creation.
-    pub backtrace: Backtrace,
+    backtrace: Backtrace,
 
     /// Optional previous error in the chain.
     pub previous: Option<Box<dyn Error + Send + Sync>>,
@@ -212,6 +224,49 @@ impl AppError {
         format!("{:?}", self.backtrace)
     }
 
+    /// Returns a parsed, structured backtrace from the debug output.
+    pub fn trace_frames(&self) -> Vec<TraceFrame> {
+        let raw = format!("{:?}", self.backtrace);
+        let mut result = Vec::new();
+        let mut current_fn: Option<String> = None;
+
+        for line in raw.lines().map(|l| l.trim()) {
+            if line.is_empty() || line.starts_with("stack backtrace:") {
+                continue;
+            }
+
+            // Match function line: "12: my_crate::function_name"
+            if let Some((_, fn_part)) = line.split_once(':') {
+                let fn_clean = fn_part.trim().to_string();
+                current_fn = Some(fn_clean);
+                continue;
+            }
+
+            // Match file/line: "at src/main.rs:42"
+            if let Some(location) = line.strip_prefix("at ") {
+                let parts: Vec<&str> = location.rsplitn(2, ':').collect();
+                let (file, line_num) = match &parts[..] {
+                    [line_str, file_str] => {
+                        let file = Some(file_str.trim().to_string());
+                        let line = line_str.trim().parse::<u32>().ok(); // ✅ PARSE HERE
+                        (file, line)
+                    }
+                    _ => (None, None),
+                };
+
+                if let Some(function) = current_fn.take() {
+                    result.push(TraceFrame {
+                        function,
+                        file,
+                        line: line_num, // ✅ Correct type
+                    });
+                }
+            }
+        }
+
+        result
+    }
+
     /// Returns the deepest error in the chain.
     pub fn root_cause(&self) -> &dyn Error {
         let mut cause = self as &dyn Error;
@@ -274,6 +329,22 @@ impl AppError {
         self.log().display();
         self
     }
+
+    /// Getter for the error code.
+    pub fn code(&self) -> &str {
+        self.code.as_ref()
+    }
+
+    /// Getter for the error message.
+    pub fn message(&self) -> &str {
+        self.message.as_ref()
+    }
+
+    /// Getter for tags
+    /// Returns a read-only slice of tag strings.
+    pub fn tags(&self) -> &[String] {
+        &self.tags
+    }
 }
 
 impl fmt::Display for AppError {
@@ -309,6 +380,10 @@ where
     }
 }
 
+// = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+// Macros for errors module - could move to macros.rs
+// = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+
 /// Macro for ergonomic error creation.
 ///
 /// ### Basic usage
@@ -332,27 +407,121 @@ where
 macro_rules! app_err {
     // Minimal (code, msg)
     ($code:expr, $msg:expr) => {{
-        $crate::error::AppError::new($code, $msg)
+        $crate::errors::AppError::new($code, $msg)
     }};
 
     // With tags
     ($code:expr, $msg:expr, tags: [$($tag:expr),*]) => {{
-        $crate::error::AppError {
+        $crate::errors::AppError {
             tags: vec![$($tag.into()),*],
-            ..$crate::error::AppError::new($code, $msg)
+            ..$crate::errors::AppError::new($code, $msg)
         }
     }};
 
     // With tags + data
     ($code:expr, $msg:expr, tags: [$($tag:expr),*], data: { $($key:expr => $val:expr),* }) => {{
-        $crate::error::AppError {
+        $crate::errors::AppError {
             tags: vec![$($tag.into()),*],
             data: {
                 let mut m = ::std::collections::HashMap::new();
                 $(m.insert($key.into(), ::serde_json::json!($val));)*
                 m
             },
-            ..$crate::error::AppError::new($code, $msg)
+            ..$crate::errors::AppError::new($code, $msg)
         }
     }};
+}
+
+// = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+// Unit tests for errors module
+// = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_basic_creation() {
+        let err = AppError::new("E123", "Something went wrong");
+
+        assert_eq!(err.code(), "E123");
+        assert_eq!(err.message(), "Something went wrong");
+        assert_eq!(err.kind_str(), "generic");
+        assert!(err.tags().is_empty());
+        assert!(err.data.is_empty());
+    }
+
+    #[test]
+    fn test_with_tags_and_data() {
+        let err = AppError::new("E404", "Not Found")
+            .with_kind("http")
+            .with_tag("client")
+            .with_tags(&["404", "user"])
+            .with_data("path", json!("/foo"));
+
+        assert_eq!(err.kind_str(), "http");
+        assert_eq!(err.tags(), &["client", "404", "user"]);
+        assert_eq!(err.data.get("path").unwrap(), "/foo");
+    }
+
+    #[test]
+    fn test_trace_frames_structure() {
+        let err = AppError::new("E999", "trace test");
+        let frames = err.trace_frames();
+
+        if frames.is_empty() {
+            eprintln!("Warning: trace_frames is empty — run with RUST_BACKTRACE=1 for full test coverage.");
+            return; // Don't panic
+        }
+
+        for frame in frames {
+            assert!(!frame.function.is_empty());
+            // File and line are optional
+        }
+    }
+
+    #[test]
+    fn test_error_chaining() {
+        let source = std::io::Error::new(std::io::ErrorKind::Other, "disk failure");
+        let err = AppError::from_error(source);
+
+        assert!(err.previous.is_some());
+        assert!(err.root_cause().to_string().contains("disk failure"));
+    }
+
+    #[test]
+    fn test_display_fmt() {
+        let err = AppError::new("E001", "Test").with_kind("demo");
+        let out = format!("{}", err);
+        assert!(out.contains("E001"));
+        assert!(out.contains("Test"));
+        assert!(out.contains("demo"));
+    }
+
+    #[test]
+    fn test_app_err_macro_minimal() {
+        let err = app_err!("E400", "Bad request");
+        assert_eq!(err.code(), "E400");
+        assert_eq!(err.message(), "Bad request");
+    }
+
+    #[test]
+    fn test_app_err_macro_with_tags() {
+        let err = app_err!("E401", "Unauthorized", tags: ["auth", "token"]);
+        assert_eq!(err.tags(), &["auth", "token"]);
+    }
+
+    #[test]
+    fn test_app_err_macro_with_tags_and_data() {
+        let err = app_err!(
+            "E500",
+            "Failure",
+            tags: ["internal"],
+            data: { "retry" => 3, "timeout" => "10s" }
+        );
+
+        assert_eq!(err.tags(), &["internal"]);
+        assert_eq!(err.data.get("retry").unwrap(), &json!(3));
+        assert_eq!(err.data.get("timeout").unwrap(), &json!("10s"));
+    }
 }

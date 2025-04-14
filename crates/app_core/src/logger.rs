@@ -194,6 +194,14 @@ impl Logger {
     pub fn critical(msg: &str, fields: Option<&[(&str, Value)]>) {
         Self::log(LogLevel::Error, "ERROR", msg, fields, Some("critical"), None);
     }
+
+    /// Flushes the internal log file, useful for integration testing.
+    #[cfg(feature = "test-utils")]
+    pub fn flush() {
+        if let Some(file) = LOG_FILE.lock().unwrap().as_mut() {
+            file.flush().ok();
+        }
+    }
 }
 
 /// Contextual logger that carries persistent fields across all logs it emits.
@@ -252,4 +260,16 @@ impl LoggerInstance {
     pub fn critical(&self, msg: &str, fields: Option<&[(&str, Value)]>) {
         self.log(LogLevel::Error, "ERROR", msg, fields, Some("critical"));
     }
+}
+
+#[cfg(feature = "test-utils")]
+pub fn _reset_logger_for_tests() {
+    // Flush the file before dropping it
+    if let Some(file) = LOG_FILE.lock().unwrap().as_mut() {
+        file.flush().ok(); // <--- flush here
+    }
+
+    *LOG_FILE.lock().unwrap() = None;
+    *LOG_PATH.lock().unwrap() = None;
+    *MIN_LEVEL.lock().unwrap() = LogLevel::Info;
 }

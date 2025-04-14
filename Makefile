@@ -57,11 +57,12 @@ test:
 
 .PHONY: test-app-core
 test-app-core:
-	cargo test --package app-core --all-targets --all-features
+	#cargo test --package app_core --all-targets --all-features
+	cargo test -p app_core --features test-utils --all-targets
 
 .PHONY: test-trade-core
 test-trade-core:
-	cargo test --package trade-core --all-targets --all-features
+	cargo test --package trade_core --all-targets --all-features
 
 .PHONY: build
 build:
