@@ -1,12 +1,14 @@
-use std::fs;
-use std::path::PathBuf;
-use std::sync::Once;
+// crates/app_core/tests/config_tests.rs
 
-use app_core::config::ConfigManager;
+use std::{fs, path::PathBuf, sync::Once};
+
+use app_core::config::{init_global_config, typed_config, ConfigManager};
 use serde::Deserialize;
 use tempfile::tempdir;
 
-#[derive(Debug, Deserialize)]
+// === Example config struct -----
+
+#[derive(Debug, Deserialize, Default)]
 struct TestConfig {
     #[serde(default)]
     logging: Logging,
@@ -33,6 +35,8 @@ struct Database {
     port: u16,
 }
 
+// === A few helper methods -----
+
 // Default value providers
 fn default_log_level() -> String {
     "info".to_string()
@@ -47,64 +51,87 @@ fn default_db_port() -> u16 {
     5432
 }
 
-// Ensures tests don't re-init the global CONFIG more than once
+// Used to prevent global config from being initialized more than once in this test file
 static INIT: Once = Once::new();
 
-fn setup_temp_config() -> PathBuf {
-    let tmp_dir = PathBuf::from("tests/tmp_config");
-    let file_path = tmp_dir.join("config.toml");
-
-    fs::create_dir_all(&tmp_dir).unwrap();
-
-    let toml_data = r#"
-[logging]
-level = "warn"
-
-[database]
-host = "db.example.com"
-    "#;
-
-    fs::write(&file_path, toml_data).unwrap();
-    file_path
-}
-
-#[test]
-fn test_loading_real_toml_file() {
+/// Create a temporary TOML config file and return the containing directory
+/// This assumes we have write permissions in the current directory
+fn setup_temp_config() -> (PathBuf, PathBuf) {
     let dir = tempdir().unwrap();
-    let file_path = dir.path().join("settings.toml");
+
+    // Check if we have write permissions for this directory
+    if !dir.path().is_dir() {
+        panic!("Integration test failed to create temporary directory for config file");
+        // TODO - probably handle this more gracefully later
+    }
+
+    let file_path = dir.path().join("config.toml");
 
     fs::write(
         &file_path,
         r#"
+        [logging]
+        level = "warn"
+
         [database]
-        url = "db.example.com"
+        host = "db.example.com"
     "#,
     )
-    .unwrap();
+        .unwrap();
 
-    let paths = vec![dir.path().to_path_buf()];
-    let config = ConfigManager::init::<TestConfig>(&paths, "settings.toml");
-    assert_eq!(config.database.host, "db.example.com");
+    (dir.into_path(), file_path)
 }
 
 #[test]
-#[should_panic(expected = "Config already initialized")]
-fn test_reinitialization_panics() {
-    let path = setup_temp_config();
-    let dir = path.parent().unwrap().to_path_buf();
+fn test_load_toml_with_config_manager() {
+    let (dir, _) = setup_temp_config();
 
-    // This will panic if init() was already called
-    ConfigManager::init::<TestConfig>(&[dir], "config.toml");
+    let config = ConfigManager::<TestConfig>::load(&[dir.clone()], "config.toml");
+
+    assert_eq!(config.typed.logging.level, "warn");
+    assert_eq!(config.typed.logging.output, "stdout"); // default
+    assert_eq!(config.typed.database.host, "db.example.com");
+    assert_eq!(config.typed.database.port, 5432); // default
 }
 
 #[test]
-#[should_panic(expected = "Type mismatch in config")]
-fn test_get_wrong_type_panics() {
-    let path = setup_temp_config();
-    let dir = path.parent().unwrap().to_path_buf();
-    ConfigManager::init::<TestConfig>(&[dir], "config.toml");
+fn test_global_config_initialization_and_access() {
+    let (dir, _) = setup_temp_config();
+
+    INIT.call_once(|| {
+        init_global_config::<TestConfig>(&[dir.clone()], "config.toml");
+
+        let config = typed_config::<TestConfig>();
+        assert_eq!(config.logging.level, "warn");
+        assert_eq!(config.database.host, "db.example.com");
+    });
+}
+
+#[test]
+#[should_panic(expected = "Global config already initialized")]
+fn test_global_config_reinitialization_panics() {
+    let (dir, _) = setup_temp_config();
+
+    INIT.call_once(|| {
+        init_global_config::<TestConfig>(&[dir.clone()], "config.toml");
+    });
+
+    // This should panic since the global config is already set
+    init_global_config::<TestConfig>(&[dir], "config.toml");
+}
+
+#[test]
+#[should_panic(expected = "Type mismatch in global config")]
+fn test_global_config_type_mismatch_panics() {
+    let (dir, _) = setup_temp_config();
+
+    INIT.call_once(|| {
+        init_global_config::<TestConfig>(&[dir.clone()], "config.toml");
+    });
 
     #[derive(Debug, Deserialize)]
     struct WrongType;
-    let _ = ConfigManager::get::<WrongType>();
+
+    // This should panic due to a type mismatch
+    let _ = typed_config::<WrongType>();
 }
