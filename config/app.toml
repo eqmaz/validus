@@ -5,11 +5,13 @@ debug = true
 [features]
 dev_mode = true
 rest_api = true
-grpc_api = false
+grpc_api = true
 fix_api  = false
 
 [rest]
 bind_on = "127.0.0.1:8080"
+request_log = true # Whether to log request with the logger
+request_out = true # Whether to output request log to stdout
 
 # Logging configuration
 [logging]

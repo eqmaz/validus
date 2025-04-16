@@ -41,13 +41,7 @@ impl SnowflakeIdGenerator {
         assert!(machine_id <= MAX_MACHINE_ID, "machine_id out of range");
         // TODO: better error handling
 
-        Self {
-            machine_id,
-            state: Arc::new(Mutex::new(State {
-                last_timestamp: 0,
-                sequence: 0,
-            })),
-        }
+        Self { machine_id, state: Arc::new(Mutex::new(State { last_timestamp: 0, sequence: 0 })) }
     }
 
     /// Generate a unique Snowflake ID (unique to this gen instance)

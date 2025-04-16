@@ -219,10 +219,7 @@ mod tests {
     fn test_next_state_invalid_update_executed() {
         // Cannot update an already executed trade
         let result = sm().next_state(Update, Executed);
-        assert_eq!(
-            result.unwrap_err(),
-            ValidationError::InvalidTransition(Executed, Executed)
-        );
+        assert_eq!(result.unwrap_err(), ValidationError::InvalidTransition(Executed, Executed));
     }
 
     #[test]
@@ -250,9 +247,6 @@ mod tests {
     fn test_submit_not_allowed_from_needs_reapproval() {
         // Cannot submit from NeedsReapproval state
         let result = sm().next_state(Submit, NeedsReapproval);
-        assert!(matches!(
-            result,
-            Err(ValidationError::InvalidAction(Submit, NeedsReapproval))
-        ));
+        assert!(matches!(result, Err(ValidationError::InvalidAction(Submit, NeedsReapproval))));
     }
 }

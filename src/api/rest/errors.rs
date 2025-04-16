@@ -1,10 +1,10 @@
+use app_core::AppError;
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
     Json,
 };
 use serde_json::json;
-use app_core::AppError;
 
 pub struct HttpAppError(pub AppError);
 

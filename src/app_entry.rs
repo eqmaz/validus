@@ -1,4 +1,4 @@
-use crate::api::start_rest_server_bg;
+use crate::api::{start_grpc_server_bg, start_rest_server_bg};
 use crate::service::trading_service::*;
 use app_core::prelude::*;
 use std::future::Future;
@@ -26,11 +26,16 @@ pub async fn run(app: &mut AppContext) -> Result<(), AppError> {
     if app.feature_enabled("rest_api") {
         iout!("Starting REST server");
         start_rest_server_bg();
-
-        // keep the app alive
-        tokio::signal::ctrl_c().await.expect("Failed to listen for ctrl_c");
-        iout!("Shutdown requested");
     }
+
+    if app.feature_enabled("grpc_api") {
+        iout!("Starting gRPC server");
+        start_grpc_server_bg();
+    }
+
+    // keep the app alive
+    tokio::signal::ctrl_c().await.expect("Failed to listen for ctrl_c");
+    iout!("Shutdown requested");
 
     Ok(())
 }

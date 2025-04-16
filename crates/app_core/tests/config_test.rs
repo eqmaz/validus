@@ -77,7 +77,7 @@ fn setup_temp_config() -> (PathBuf, PathBuf) {
         host = "db.example.com"
     "#,
     )
-        .unwrap();
+    .unwrap();
 
     (dir.into_path(), file_path)
 }

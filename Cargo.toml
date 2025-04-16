@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+    "xtask",
     "crates/app_core",
     "crates/trade_core",
     "crates/openapi",
@@ -15,6 +16,7 @@ members = [
 name = "validus_trade"
 version = "0.1.0"
 edition = "2021"
+build = "build.rs"
 
 [dependencies]
 # Internal crates:
@@ -37,6 +39,13 @@ axum-extra = { version = "0.9", features = ["cookie", "multipart"] }
 async-trait = "0.1"
 http = "1.0"
 serde_json = "1.0.140"
+
+# For gRPC
+tonic = { version = "0.13", features = ["transport"] }
+prost = "0.13.5"
+
+[build-dependencies]
+tonic-build = "0.13"
 
 # To support stand-alone binary on Alpine container
 [profile.release]

@@ -28,9 +28,7 @@ pub fn default_optional_nullable<T>() -> Option<Nullable<T>> {
 }
 
 /// Serde helper function to deserialize into an `Option<Nullable<T>>`
-pub fn deserialize_optional_nullable<'de, D, T>(
-    deserializer: D,
-) -> Result<Option<Nullable<T>>, D::Error>
+pub fn deserialize_optional_nullable<'de, D, T>(deserializer: D) -> Result<Option<Nullable<T>>, D::Error>
 where
     D: Deserializer<'de>,
     T: Deserialize<'de>,
@@ -620,13 +618,12 @@ where
         // If that succeeds as null, we can easily return a Null.
         // If that succeeds as some value, we deserialize that value and return a Present.
         // If that errors, we return the error.
-        let presence: Result<::serde_json::Value, _> =
-            serde::Deserialize::deserialize(deserializer);
+        let presence: Result<::serde_json::Value, _> = serde::Deserialize::deserialize(deserializer);
         match presence {
             Ok(serde_json::Value::Null) => Ok(Nullable::Null),
-            Ok(some_value) => serde_json::from_value(some_value)
-                .map(Nullable::Present)
-                .map_err(serde::de::Error::custom),
+            Ok(some_value) => {
+                serde_json::from_value(some_value).map(Nullable::Present).map_err(serde::de::Error::custom)
+            }
             Err(x) => Err(x),
         }
     }

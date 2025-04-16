@@ -1,5 +1,6 @@
 // TODO - not in use yet, was just an idea
 
+use axum::body::Body;
 use axum::{
     async_trait,
     extract::{FromRequest, Json},
@@ -8,8 +9,7 @@ use axum::{
 };
 use serde::de::DeserializeOwned;
 use serde_json::json;
-use std::{ops::Deref};
-use axum::body::Body;
+use std::ops::Deref;
 
 /// Wraps validated JSON data and gives nice error messages
 pub struct ValidatedJson<T>(pub T);

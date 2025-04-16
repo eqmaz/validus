@@ -51,10 +51,8 @@ pub fn diff_details(from: &TradeDetails, to: &TradeDetails) -> DiffMap {
     macro_rules! diff_field {
         ($field:ident) => {
             if from.$field != to.$field {
-                diffs.insert(
-                    stringify!($field).to_string(),
-                    (format!("{:?}", from.$field), format!("{:?}", to.$field)),
-                );
+                diffs
+                    .insert(stringify!($field).to_string(), (format!("{:?}", from.$field), format!("{:?}", to.$field)));
             }
         };
     }

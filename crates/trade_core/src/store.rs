@@ -74,9 +74,9 @@ impl TradeStore for InMemoryStore {
 // = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 #[cfg(test)]
 mod tests {
-    use chrono::{TimeZone, Utc};
     use super::*;
     use crate::model::{Currency, Direction, TradeDetails, TradeState}; // adjust path if needed
+    use chrono::{TimeZone, Utc};
     use rust_decimal::prelude::FromPrimitive;
     use rust_decimal::Decimal;
     use rust_decimal_macros::dec;

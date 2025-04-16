@@ -90,11 +90,7 @@ impl Logger {
     pub fn init<P: AsRef<Path>>(path: P, min_level: &str) {
         let path_str = path.as_ref().to_string_lossy().to_string();
 
-        let file = OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(&path)
-            .expect("Failed to open log file");
+        let file = OpenOptions::new().create(true).append(true).open(&path).expect("Failed to open log file");
 
         *LOG_FILE.lock().unwrap() = Some(file);
         *LOG_PATH.lock().unwrap() = Some(path_str);
@@ -103,9 +99,7 @@ impl Logger {
 
     /// Create a new instance of a contextual logger that can include default fields.
     pub fn new_instance() -> LoggerInstance {
-        LoggerInstance {
-            default_fields: IndexMap::new(),
-        }
+        LoggerInstance { default_fields: IndexMap::new() }
     }
 
     /// Internal implementation used by both global and instance loggers.

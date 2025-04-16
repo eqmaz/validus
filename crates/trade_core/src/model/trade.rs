@@ -40,11 +40,7 @@ impl Trade {
             details: initial_details,
         };
 
-        Trade {
-            id,
-            created_at: now,
-            history: vec![initial_snapshot],
-        }
+        Trade { id, created_at: now, history: vec![initial_snapshot] }
     }
 
     /// Returns the current state of the trade
@@ -96,10 +92,7 @@ impl Trade {
     /// Get the original requester of the trade
     /// Do not confuse with get_first_approver (user who FIRST approved the trade)
     pub fn get_requester(&self) -> UserId {
-        self.history
-            .get(0)
-            .map(|s| s.user_id.clone())
-            .unwrap_or(String::default())
+        self.history.get(0).map(|s| s.user_id.clone()).unwrap_or(String::default())
     }
 
     /// Get user_id of the first approver
@@ -120,10 +113,7 @@ impl Trade {
 
     /// History in tabular-friendly form (vector of tuple)
     pub fn history_table(&self) -> HistoryTable {
-        self.history
-            .iter()
-            .map(|s| (s.snapshot_id, s.user_id.clone(), s.from_state, s.to_state, s.timestamp))
-            .collect()
+        self.history.iter().map(|s| (s.snapshot_id, s.user_id.clone(), s.from_state, s.to_state, s.timestamp)).collect()
     }
 
     // In future post MVP, could add methods to get by date and so on

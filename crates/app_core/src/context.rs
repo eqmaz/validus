@@ -66,10 +66,7 @@ pub struct AppInitOptions<T> {
 
 impl<T> Default for AppInitOptions<T> {
     fn default() -> Self {
-        Self {
-            config: None,
-            logger: None,
-        }
+        Self { config: None, logger: None }
     }
 }
 
@@ -92,11 +89,8 @@ impl<T> AppInitOptions<T> {
     /// # Returns
     /// A modified `AppInitOptions` instance with the configuration settings applied.
     pub fn with_config(mut self, search_paths: Vec<PathBuf>, filename: impl Into<String>) -> Self {
-        self.config = Some(AppConfigOptions {
-            config_type: std::marker::PhantomData,
-            search_paths,
-            file_name: filename.into(),
-        });
+        self.config =
+            Some(AppConfigOptions { config_type: std::marker::PhantomData, search_paths, file_name: filename.into() });
         self
     }
 
@@ -113,10 +107,7 @@ impl<T> AppInitOptions<T> {
     /// # Returns
     /// A modified `AppInitOptions` instance with the logger configuration applied.
     pub fn with_logger(mut self, path: impl Into<String>, level: impl Into<String>) -> Self {
-        self.logger = Some(AppLoggerOptions {
-            log_path: path.into(),
-            log_level: level.into(),
-        });
+        self.logger = Some(AppLoggerOptions { log_path: path.into(), log_level: level.into() });
         self
     }
 }
@@ -196,10 +187,7 @@ impl AppContext {
     {
         Self::init_config(&opts);
         Self::init_logger(&opts);
-        Self {
-            feature_flags: Arc::new(Mutex::new(HashMap::new())),
-            shutdown_hooks: vec![],
-        }
+        Self { feature_flags: Arc::new(Mutex::new(HashMap::new())), shutdown_hooks: vec![] }
     }
 
     /// Inject key-value feature flags

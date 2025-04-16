@@ -8,6 +8,7 @@ RELEASE_DIR=$(BUILD_DIR)/debug
 BINARY=$(RELEASE_DIR)/$(PACKAGE_NAME)
 DOCKER_IMAGE := validus
 DOCKER_CONTAINER := validus
+PROTO_OUT_DIR=src/api/grpc/generated
 
 # Help
 .PHONY: help
@@ -100,10 +101,10 @@ update:
 	cargo update
 
 .PHONY: all
-all: format check test build run
+all: proto format check test build run
 
 # ==========================
-# Code Generation
+# Code Generation (REST API)
 # ==========================
 .PHONY: gen-api
 gen-api:
@@ -113,6 +114,18 @@ gen-api:
 		-g rust-axum \
 		-i openapi/rest.yaml \
 		-o crates/openapi/
+
+
+# ==========================
+# Code Generation (PROTOBUF)
+# ==========================
+.PHONY: proto
+proto:
+	cargo run -p xtask -- proto
+
+.PHONY: clean-proto
+clean-proto:
+	rm -rf $(PROTO_OUT_DIR)
 
 # ==========================
 # Docker Commands

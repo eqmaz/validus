@@ -12,9 +12,7 @@ pub async fn start_rest_server() {
 
     let router = create_rest_router();
 
-    axum::serve(listener, router.into_make_service())
-        .await
-        .expect("REST server crashed");
+    axum::serve(listener, router.into_make_service()).await.expect("REST server crashed");
 }
 
 /// Starts the REST server in the background.

@@ -28,9 +28,7 @@ pub struct TradeEngine {
 impl<'a> TradeEngine {
     /// Helper method to access the store properly
     fn store_lock(&self) -> Result<std::sync::MutexGuard<'_, dyn TradeStore + Send + Sync + 'static>, ValidationError> {
-        self.store
-            .lock()
-            .map_err(|_| ValidationError::Internal("Failed to acquire store lock".into()))
+        self.store.lock().map_err(|_| ValidationError::Internal("Failed to acquire store lock".into()))
     }
 
     /// Internal function to fetch a trade by ID
@@ -50,11 +48,7 @@ impl<'a> TradeEngine {
         // wrap the store in an Arc<Mutex for thread safety
         let store: Arc<Mutex<dyn TradeStore>> = Arc::new(Mutex::new(store));
 
-        Self {
-            id_gen: SnowflakeIdGenerator::new(machine_id),
-            store,
-            state_machine: StateMachine::default(),
-        }
+        Self { id_gen: SnowflakeIdGenerator::new(machine_id), store, state_machine: StateMachine::default() }
     }
 
     /// Creates a DRAFT trade on the system and returns the trade ID.
@@ -189,7 +183,10 @@ impl<'a> TradeEngine {
             let err: AppError = ValidationError::InvalidTransition(state_now, state_new).into();
 
             // write that we are here
-            println!("TradeEngine::cancel: trade_id: {}, state_now: {:?}, state_new: {:?} - failed", trade_id, state_now, state_new);
+            println!(
+                "TradeEngine::cancel: trade_id: {}, state_now: {:?}, state_new: {:?} - failed",
+                trade_id, state_now, state_new
+            );
 
             return Err(err.with_tags(&["cancel"]).with_data("state", err_data));
         }
@@ -262,10 +259,7 @@ impl<'a> TradeEngine {
 
         let state_now = trade.current_state();
         let state_new = self.state_machine.next_state(TradeAction::SendToExecute, state_now)?;
-        if !self
-            .state_machine
-            .can_transition(state_now, TradeState::SentToCounterparty)
-        {
+        if !self.state_machine.can_transition(state_now, TradeState::SentToCounterparty) {
             let e: AppError = ValidationError::InvalidTransition(state_now, TradeState::SentToCounterparty).into();
             let err_data = json!({"user_id": user_id, "trade_id": trade_id});
             return Err(e.with_data("info", err_data).with_tags(&["send"]));
@@ -358,10 +352,7 @@ impl<'a> TradeEngine {
         })?;
 
         // Get the latest details
-        trade
-            .latest_details()
-            .cloned()
-            .ok_or_else(|| ValidationError::Internal("Missing trade details".into()).into())
+        trade.latest_details().cloned().ok_or_else(|| ValidationError::Internal("Missing trade details".into()).into())
     }
 
     /// Returns a structure of differences between two snapshots of a trade
@@ -406,9 +397,9 @@ impl<'a> TradeEngine {
 // = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 #[cfg(test)]
 mod tests {
-    use chrono::{TimeZone, Utc};
     use super::*;
     use crate::model::{Currency, Direction};
+    use chrono::{TimeZone, Utc};
     use rust_decimal_macros::dec;
 
     fn sample_trade_details() -> TradeDetails {

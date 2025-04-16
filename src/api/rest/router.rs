@@ -1,14 +1,14 @@
-use std::sync::Arc;
-use openapi::server; // Generated from OpenAPI spec
-use serde_json::json;
 use axum::{
-    Json,
     body::Body,
     http::{Request, StatusCode},
     middleware::{from_fn, Next},
     response::{IntoResponse, Response},
     routing::Router as AxumRouter,
+    Json,
 };
+use openapi::server; // Generated from OpenAPI spec
+use serde_json::json;
+use std::sync::Arc;
 
 use crate::api::rest::impls::RestApiImpl;
 
@@ -28,6 +28,5 @@ async fn json_rejection_handler(req: Request<Body>, next: Next) -> Response {
 
 pub fn create_rest_router() -> AxumRouter {
     let api_impl = Arc::new(RestApiImpl::default());
-    server::new(api_impl)
-        .layer(from_fn(json_rejection_handler))
+    server::new(api_impl).layer(from_fn(json_rejection_handler))
 }

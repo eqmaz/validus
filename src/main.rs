@@ -32,9 +32,7 @@ async fn main() {
 
     // Build AppInitOptions
     // TODO get logger settings from config, use params as fallback
-    let opts = AppInitOptions::new()
-        .with_config(config_paths, CFG_FILE)
-        .with_logger(LOG_STREAM, LOG_LEVEL);
+    let opts = AppInitOptions::new().with_config(config_paths, CFG_FILE).with_logger(LOG_STREAM, LOG_LEVEL);
 
     // Initialize the application context (Config struct in app_config.rs)
     let mut app = AppContext::init::<AppConfig>(opts);

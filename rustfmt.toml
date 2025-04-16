@@ -1,5 +1,5 @@
 max_width = 120               # default is 100
-#use_small_heuristics = "Max"  # Prevents rustfmt from wrapping things "too early"
+use_small_heuristics = "Max"  # Prevents rustfmt from wrapping things "too early"
 #wrap_comments = false         # Stops auto-wrapping comments
 #normalize_doc_attributes = false
 #merge_imports = false

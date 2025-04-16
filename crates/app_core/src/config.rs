@@ -38,9 +38,7 @@ where
 {
     let store = ConfigManager::<T>::load(search_paths, filename);
 
-    CONFIG
-        .set(store.typed.clone() as Arc<dyn Any + Send + Sync>)
-        .expect("Global config already initialized");
+    CONFIG.set(store.typed.clone() as Arc<dyn Any + Send + Sync>).expect("Global config already initialized");
 
     RAW.set(store.raw).expect("Raw config already initialized");
 }
@@ -79,27 +77,18 @@ where
             Ok(raw) => match raw.clone().try_deserialize::<T>() {
                 Ok(typed) => {
                     //debug!("✔ Config deserialized.");
-                    Self {
-                        typed: Arc::new(typed),
-                        raw,
-                    }
+                    Self { typed: Arc::new(typed), raw }
                 }
                 Err(e) => {
                     wout!("Failed to parse config: {}", e);
                     wout!("Falling back to default config.");
-                    Self {
-                        typed: Arc::new(T::default()),
-                        raw,
-                    }
+                    Self { typed: Arc::new(T::default()), raw }
                 }
             },
             Err(e) => {
                 wout!("Config build failed: {}", e);
                 wout!("Falling back to default config.");
-                Self {
-                    typed: Arc::new(T::default()),
-                    raw: RawConfig::default(),
-                }
+                Self { typed: Arc::new(T::default()), raw: RawConfig::default() }
             }
         }
     }
@@ -138,10 +127,7 @@ pub fn config<T>() -> ConfigManager<T>
 where
     T: Send + Sync + 'static,
 {
-    ConfigManager {
-        typed: typed_config::<T>(),
-        raw: raw_config().clone(),
-    }
+    ConfigManager { typed: typed_config::<T>(), raw: raw_config().clone() }
 }
 
 /// Get the typed global config (must match `T` used in `init_config_global<T>()`)

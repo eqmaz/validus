@@ -36,27 +36,23 @@ pub(crate) fn trade_hello_world() -> Result<(), AppError> {
 
     iout!("Hello world scenario");
 
-        // Create a new trade
-        let new_trade = TradeDetails {
-            trading_entity: "foo".to_string(),
-            counterparty: "bar".to_string(),
-            direction: Direction::Buy,
-            notional_currency: Currency::GBP,
-            notional_amount: Decimal::from_str("100.1").unwrap(),
-            underlying: vec![Currency::GBP, Currency::USD],
-            trade_date: Default::default(),
-            value_date: Default::default(),
-            delivery_date: Default::default(),
-            strike: None,
-        };
+    // Create a new trade
+    let new_trade = TradeDetails {
+        trading_entity: "foo".to_string(),
+        counterparty: "bar".to_string(),
+        direction: Direction::Buy,
+        notional_currency: Currency::GBP,
+        notional_amount: Decimal::from_str("100.1").unwrap(),
+        underlying: vec![Currency::GBP, Currency::USD],
+        trade_date: Default::default(),
+        value_date: Default::default(),
+        delivery_date: Default::default(),
+        strike: None,
+    };
 
-        let trade_one = engine.create(USER_TRADER_1, new_trade)?;
-        let trade_one_status = engine.trade_get_status(trade_one)?;
-        sout!(
-            "\t -> First trade created with ID: {} and status {:?}",
-            trade_one,
-            trade_one_status
-        );
+    let trade_one = engine.create(USER_TRADER_1, new_trade)?;
+    let trade_one_status = engine.trade_get_status(trade_one)?;
+    sout!("\t -> First trade created with ID: {} and status {:?}", trade_one, trade_one_status);
 
     // there should be 1 item in the history
     let trade_one_hist = engine.trade_history(trade_one)?;
@@ -87,11 +83,7 @@ pub(crate) fn trade_scenario_1() -> Result<(), AppError> {
     // Submit the trade
     let trade_id = engine.create(USER_TRADER_1, new_trade)?;
     let mut trade_status = engine.trade_get_status(trade_id)?;
-    sout!(
-        "\t -> Trade created with ID: {} and status {:?}",
-        trade_id,
-        trade_status
-    );
+    sout!("\t -> Trade created with ID: {} and status {:?}", trade_id, trade_status);
 
     // Submit the trade - status should transition to "PendingApproval"
     engine.submit(USER_TRADER_1, trade_id)?;
@@ -132,11 +124,7 @@ pub(crate) fn trade_scenario_2() -> Result<(), AppError> {
     // Create - Submit the trade into DRAFT
     let trade_id = engine.create(USER_TRADER_1, new_trade)?;
     let mut trade_status = engine.trade_get_status(trade_id)?;
-    sout!(
-        "\t -> Trade created with ID: {} and status {:?}",
-        trade_id,
-        trade_status
-    );
+    sout!("\t -> Trade created with ID: {} and status {:?}", trade_id, trade_status);
 
     // Get details of the trade just executed
     let mut trade_details = engine.trade_details(trade_id)?;
@@ -183,11 +171,7 @@ pub(crate) fn trade_scenario_3() -> Result<(), AppError> {
     // Submit the trade
     let trade_id = engine.create(USER_TRADER_1, new_trade)?;
     let mut trade_status = engine.trade_get_status(trade_id)?;
-    sout!(
-        "\t -> Trade created with ID: {} and status {:?}",
-        trade_id,
-        trade_status
-    );
+    sout!("\t -> Trade created with ID: {} and status {:?}", trade_id, trade_status);
 
     // Submit the trade - status should transition to "PendingApproval"
     engine.submit(USER_TRADER_1, trade_id)?;
@@ -266,4 +250,3 @@ pub(crate) fn trade_hist_diff() -> Result<(), AppError> {
 
     Ok(())
 }
-

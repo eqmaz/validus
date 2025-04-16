@@ -32,9 +32,7 @@ impl TradeDetails {
 
         // Check that underlying currency has at least one entry
         if self.underlying.is_empty() {
-            return Err(ValidationError::EmptyUnderlying(
-                "Underlying currency must be present".into(),
-            ));
+            return Err(ValidationError::EmptyUnderlying("Underlying currency must be present".into()));
         }
 
         // Check that notional currency is present in underlying currency list

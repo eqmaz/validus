@@ -41,11 +41,7 @@ pub struct LogConfig {
 
 impl Default for LogConfig {
     fn default() -> Self {
-        Self {
-            output: "./logs/app.log".to_string(),
-            level: "info".to_string(),
-            format: "json".to_string(),
-        }
+        Self { output: "./logs/app.log".to_string(), level: "info".to_string(), format: "json".to_string() }
     }
 }
 
@@ -65,9 +61,7 @@ pub struct RestConfig {
 }
 impl Default for RestConfig {
     fn default() -> Self {
-        Self {
-            bind_on: "0.0.0.0:8080".to_string(),
-        }
+        Self { bind_on: "0.0.0.0:8080".to_string() }
     }
 }
 

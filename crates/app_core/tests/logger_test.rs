@@ -1,7 +1,7 @@
-use app_core::logger::{Logger};
+use app_core::logger::Logger;
 use serde_json::{json, Value};
 use std::{
-    fs::{File},
+    fs::File,
     io::{BufRead, BufReader},
     path::PathBuf,
     sync::Once,
@@ -20,12 +20,8 @@ fn read_log_lines(path: &PathBuf) -> Vec<Value> {
     let file = File::open(path).expect("Log file not found");
     let reader = BufReader::new(file);
 
-    reader
-        .lines()
-        .filter_map(|line| serde_json::from_str::<Value>(&line.unwrap()).ok())
-        .collect()
+    reader.lines().filter_map(|line| serde_json::from_str::<Value>(&line.unwrap()).ok()).collect()
 }
-
 
 #[test]
 fn test_global_logger_output() {
@@ -43,12 +39,7 @@ fn test_global_logger_output() {
     Logger::flush();
 
     let logs = read_log_lines(&file_path);
-    assert!(
-        logs.len() >= 3,
-        "Expected at least 3 logs, got {} — logs: {:#?}",
-        logs.len(),
-        logs
-    );
+    assert!(logs.len() >= 3, "Expected at least 3 logs, got {} — logs: {:#?}", logs.len(), logs);
 
     let last = logs.last().unwrap();
     assert_eq!(last["msg"], "Task completed");
@@ -57,7 +48,6 @@ fn test_global_logger_output() {
     assert_eq!(last["fields"]["task_id"], "abc-123");
 }
 
-
 #[test]
 fn test_contextual_logger_output() {
     let dir = tempdir().unwrap();
@@ -65,9 +55,7 @@ fn test_contextual_logger_output() {
 
     init_logger_once(&file_path);
 
-    let logger = Logger::new_instance()
-        .with_field("user_id", json!(42))
-        .with_field("region", json!("eu-west"));
+    let logger = Logger::new_instance().with_field("user_id", json!(42)).with_field("region", json!("eu-west"));
 
     logger.info("User logged in", None);
     logger.critical("Token expired", Some(&[("token_id", json!("tok-xyz"))]));
@@ -78,22 +66,10 @@ fn test_contextual_logger_output() {
     let last = logs.last().unwrap();
     assert_eq!(last["msg"], "Token expired");
     assert_eq!(last["lvl"], "ERROR");
-    assert_eq!(
-        last["fields"]["kind"],
-        Value::String("critical".to_string())
-    );
-    assert_eq!(
-        last["fields"]["user_id"],
-        Value::Number(42.into())
-    );
-    assert_eq!(
-        last["fields"]["region"],
-        Value::String("eu-west".to_string())
-    );
-    assert_eq!(
-        last["fields"]["token_id"],
-        Value::String("tok-xyz".to_string())
-    );
+    assert_eq!(last["fields"]["kind"], Value::String("critical".to_string()));
+    assert_eq!(last["fields"]["user_id"], Value::Number(42.into()));
+    assert_eq!(last["fields"]["region"], Value::String("eu-west".to_string()));
+    assert_eq!(last["fields"]["token_id"], Value::String("tok-xyz".to_string()));
 }
 
 #[test]
@@ -113,4 +89,3 @@ fn test_log_level_filtering() {
     assert_eq!(logs[0]["lvl"], "WARN");
     assert_eq!(logs[1]["lvl"], "ERROR");
 }
-

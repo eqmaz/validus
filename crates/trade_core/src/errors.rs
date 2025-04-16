@@ -1,10 +1,9 @@
+use app_core::{AppError, ErrorCode};
 use chrono::{DateTime, Utc};
 use rust_decimal::Decimal;
 use serde_json::json;
-use app_core::{AppError, ErrorCode};
 
 use crate::model::{Currency, TradeAction, TradeId, TradeState};
-
 
 #[derive(Debug)]
 pub enum ErrCodes {
